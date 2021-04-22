@@ -1,4 +1,7 @@
-# kubernetes
+# k8s-cka-certified
+La finalidad de este repositorio es tener una guia para obtener la certificación de Kubernetes __CKA__.
+
+Se divide en directorios, que contienen ficheros README.md con la información necesaria para poder pasar el examen de certificación.
 
 # Tabla de contenidos
 - [kubernetes](#kubernetes)
