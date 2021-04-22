@@ -1,5 +1,5 @@
-# Troubleshooting
-## Fallos de aplicación
+# 11 - Troubleshooting
+## 11.1 - Fallos de aplicación
 Partiendo de una aplicación web con dos componentes: Servidor Web y BBDD. Debemos comprender todos los componentes/objetos que existen en todo el flujo.
 
 ![application](../img/11_troubleshooting_applications.png)
@@ -91,7 +91,7 @@ kubectl logs web -f(same tail -f) --previous (show previous pod)
 4. Continuando con el análisis, compruebe el servicio de la BBDD y el Pod que contiene la BBDD.
 5. Puede consultar la página de Kubernetes (https://kubernetes.io/docs/tasks/debug-application-cluster/debug-application/), aparcen algunos ejemplos más sobre troubleshooting de aplicaciones.
 
-## Fallos en Control Plane (Plano de control)
+## 11.2 - Fallos en Control Plane (Plano de control)
 En este punto veremos comprobar fallos en los componentes del Plano de Control (Control Plane).
 
 1. Comprobaremos el estado de los nodos
@@ -231,7 +231,7 @@ Mar 20 07:57:25 master-1 kube-apiserver[15767]: I0320 07:57:25.558514 15767 flag
 Mar 20 07:57:25 master-1 kube-apiserver[15767]: I0320 07:57:25.558528 15767 flags.go:33] FLAG: --audit-log-format="json"
 ```
 
-## Fallos en nodos Worker
+## 11.3 - Fallos en nodos Worker
 Cuando experimentamos fallos en los Nodos Worker, es un buen comienzo, realizar el siguiente análisis.
 
 1. Comprobamos el estado de los nodos
@@ -358,7 +358,7 @@ f6:f8:7f:eb:5d:59:94:46:d8:da:37:75:cf:27:0b:
 ...
 ```
 
-## Troubleshooting de red
+## 11.4 -Troubleshooting de red
 Kubernetes utiliza plugins CNI para configurar la red. El kubelet se encarga de ejecutar los plugins.
 
 * `cni-bin-dir`: Kubelet busca este directorio en busca de plugins en el arranque
@@ -372,7 +372,7 @@ Hay varios plugins disponibles y estos son algunos:
 
 > Nota: Si hay varios archivos de configuración CNI en el directorio,  kubelet utilizará el archivo de configuración que viene primero por nombre en orden lexicográfico.
 
-### DNS en Kubernetes
+### 11.4.1 - DNS en Kubernetes
 
 Kubernetes utiliza `CoreDNS`, es un servidor DNS flexible y extensible que puede servir como DNS del clúster Kubernetes.
 
@@ -405,7 +405,7 @@ Este es el backend de k8s para cluster.local y dominios inversos.
 Reenvía los dominios fuera del clúster directamente al servidor DNS autoritativo correcto.
 
 
-### Troubleshooting para coreDNS
+### 11.4.2 - Troubleshooting para coreDNS
 
 1. Si encuentra pods `CoreDNS` en estado `Pending`, compruebe primero que el plugin de red está instalado.
 
@@ -446,7 +446,7 @@ Si no hay `Endpoints` en el `Service`, inspeccionle y compruebe que utiliza `Sel
 nslookup <service-name>.<namespace>
 ```
 
-### Troubleshooting para kube-proxy
+### 11.4.3 - Troubleshooting para kube-proxy
 
 `kube-proxy` es un proxy de red que se ejecuta en cada nodo del cluster y mantiene reglas de red en los nodos. 
 Estas reglas de red permiten la comunicación de red a los Pods desde sesiones de red dentro o fuera del cluster.

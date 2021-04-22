@@ -1,8 +1,13 @@
-# Table of contents
-
-# 07 Security
-
-## 07.7 Certificates
+# 07 - Security
+## 07.1 - Kubernetes Security Primivite
+## 07.2 - Authentication
+## 07.3 - TLS Introduction
+## 07.4 - TLS Basic
+## 07.5 - TLS in Kubernetes
+## 07.6 - TLS in Kubernetes - Certificate creation
+## 07.7 - View Certificate Details
+## 07.8 - Certificates API
+## 07.9 - Certificates
 Certificados
 Certificados para la CA
 	Generar ca.key (clave privada)
@@ -30,7 +35,7 @@ Crear un CertificateSigningRequest
 	se visualiza en csr
 	se aprueba con certificate
 
-## 07.8 Kubeconfig
+## 07.10 -  Kubeconfig
 We have seen that the k8s API Server can be accessed:
 ```bash
 curl https://my-kube:6443/api/v1/pods \
@@ -130,7 +135,7 @@ kubectl config view
 kubectl config use-context my-kube-pro@my-kube-admin-pro
 ```
 
-## 07.9 RBAC
+## 07.11 -  RBAC
 To use RBAC, the first thing we need is a Role:
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -208,7 +213,7 @@ kubectl -n kube-system get pod kube-api -oyaml | grep -i auth
 ```
 
 
-## 07.10 ClusterRole - ClusterRoleBinding
+## 07.12 -  ClusterRole - ClusterRoleBinding
 We can identify two types of levels for the 'api-groups'.
 - At the level of namespace. The 'Role' and 'RoleBinding' resources are used, and applied to resources at the level of namespace (pods, replicasets, jobs, deployments, PVC, etc).
 - At cluster level. The 'ClusterRole' and 'ClusterRoleBinding' resources are used and applied to resources at cluster level (nodes, PV, namespaces, etc).
@@ -265,7 +270,7 @@ roleRef:
 ```
 
 
-## 07.11 Image Security
+## 07.13 - Image Security
 Sometimes we may need to access images from a private registry. 
 By default kubernetes points to Docker Hub's public registry.
 
@@ -307,7 +312,7 @@ spec:
 ```
 
 
-## 07.12 Security Context
+## 07.14 -  Security Context
 You can choose to configure the safety settings at pod or container level.
 - Pod. Will be transferred to all containers.
 ```yaml
@@ -343,7 +348,7 @@ spec:
       capabilities:                     # Allos capabilities
         add: ["MAC_ADMIN"]
 ```
-## 07.13 Network policy
+## 07.15 - Network policy
 By default in kubernetes all traffic is allowed between pods. You can indicate by means of `Network policies`, from where a pod is reachable.
 It is assigned the same as other kuberrnetes objects, through `Selectors` and `Labels`.
 ```yaml

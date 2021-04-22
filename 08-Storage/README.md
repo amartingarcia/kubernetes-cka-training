@@ -1,5 +1,5 @@
 # 08 Storage
-## 08.1 Volumes
+## 08.1 - Volumes
 The containers are intended to last for a short period of time.
 They are requested when they are needed to die, and their data are destroyed with the container.
 To ensure that the data persists, we attach volumes when they are created, preventing their loss even if the container is disposed of.
@@ -51,7 +51,7 @@ spec:
 ```
 
 
-## 08.2 Persistent Volumes
+## 08.2 - Persistent Volumes
 When the kernel environment is very large, it is not recommended to apply the previous configuration, it would imply creating a volume for each POD.
 A POD is a set of volumes for the entire cluster. Users can select the storage of this group through volume claims.
 
@@ -87,7 +87,7 @@ spec:
 ```
 
 
-## 08.3 Persistent Volume Claims
+## 08.3 - Persistent Volume Claims
 PVCs are storage claims to PVs. They are requested by users.
 Kubernetes will try to assign the correct PV according to the request (capacity, access mode, volume mode, storage class, etc).
 If you want to use a specific PV for a particular type of feature You can configure `selectors` and `labels`.
@@ -149,7 +149,7 @@ spec:
 ```
 
 
-## 08.4 PVCs in PODs
+## 08.4 - PVCs in PODs
 Once you create a PVC use it in a POD definition file by specifying the PVC Claim name under persistentVolumeClaim section in the volumes section like this.
 The same is true for ReplicaSets or Deployments. Add this to the pod template section of a Deployment on ReplicaSet.
 
@@ -173,7 +173,7 @@ The same is true for ReplicaSets or Deployments. Add this to the pod template se
 
 
 
-## 08.7 Storage Class
+## 08.7 - Storage Class
 Storage Class, allows the creation of a proxy between kubernetes and the cloud. Let's take Google Cloud as an example.
 
 - Static

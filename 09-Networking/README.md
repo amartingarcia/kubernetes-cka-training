@@ -1,6 +1,6 @@
-# 09 Networking
-## Prerequisite - Switching Routing
-### Switching
+# 09 - Networking
+## 09.1 - Prerequisite - Switching Routing
+### 09.1.1 - Switching
 Dos máquinas (A y B) pueden ser conectadas mediante un switch, a través de sus interfaces _eth0_
 
 - Para ver las interfaces del host ejecutamos:
@@ -20,7 +20,7 @@ ip addr add 192.168.1.11/24 dev eth0
 
 Ahora podremos entrar paquetes entre las máquinas A y B.
 
-### Routing
+### 09.1.2 - Routing
 Queremos conectar dos redes con dos máquinas cada red, 192.168.1.0 y 192.168.2.0.
 Un router permite comunicar estas dos redes. El enrutador posee una IP en cada red 192.168.1.1 y 192.168.2.1
 
@@ -54,9 +54,9 @@ ip route add default via 192.168.2.1
 Para las IPs no reconocidas lo mejor es añadir como destino 0.0.0.0/0
 
 
-## Prerequisite - DNS
+## 09.2 - Prerequisite - DNS
 
-### Resolución en red local
+### 09.2.1 - Resolución en red local
 Dadas dos máquinas A y B en la misma red, comprobamos que obtienen conexión por ping a través de sus IPs.
 Para no recordar la IP podemos identificar el nodo mediante un nombre, por ejemplo __db__.
 
@@ -98,7 +98,8 @@ PING www.google.com(192.168.1.11) 56(84) bytes of data.
 64 bytes from www.google.com(192.168.1.11): icmp_seq=1 ttl=64 time=0.052 ms
 64 bytes from www.google.com(192.168.1.11): icmp_seq=2 ttl=64 time=0.079 m
 ```
-### Resolución con servidor DNS
+
+### 09.2.2 - Resolución con servidor DNS
 Cuando un entorno crece y existen muchas máquinas, no es una buena forma, de mantener la conexión entre ellas.
 Podemos utilizar una máquina demoninada DNS para que obtenga un listado de máquinas e IPs y desde nuestros hosts, podamos consultarle.
 
@@ -126,14 +127,14 @@ nameserver 8.8.8.8
 > Una solución sería añadir una linea a nuestro servidor DNS para que todo lo desconocido lo reenvie a 8.8.8.8
 
 
-### Domain Names
+### 09.2.3 - Domain Names
 Se llama nombre de dominio a la traducción de una IP. La razón de que un dominio esté separado por puntos es para agrupar.
 
 La última parte de un nombre de dominio .org, .com, .net, etc son los dominios de nivel superior, y representan la intención del sitio web.
 
 El resto del nombre se entiende por subdominio. Por ejemplo: www.google.com, maps.google.com, drive.google.com.
 
-### Search Domain
+### 09.2.4 - Search Domain
 Cuando queremos acceder internamente a los servicios de una empresa, y queremos solamente utilizar el nombre de los servicios, podemos añadir a nuestro fichero:
 ```sh
 cat /etc/resolv.conf
@@ -142,7 +143,7 @@ nameserver  192.168.1.100
 search      mycompany.com   prod.mycompany.com
 ```
 
-### Record Types
+### 09.2.5 - Record Types
 ¿Como se almacenan los registros DNS?
 
 | Types |                 |                                    | Description                                                            |
@@ -162,7 +163,7 @@ Otros registros:
 | SRV   | _sip._tcp.example.com.                                                | Informa sobre los servicios disponibles del dominio |
 | LOC   | LOC record statdns.net.   IN LOC   52 22 23.000 N 4 53 32.000 E -2.00m 0.00m 10000m 10m | Ubicación fisica del servidor |
 
-### Tools for debug
+### 09.2.6 - Tools for debug
 * nslookup: consultar el nombre de host de un servidor DNS
 ```
 nslookup www.google.es 
@@ -199,7 +200,8 @@ www.google.es.		106	IN	A	74.125.193.94
 ;; WHEN: Tue Nov 03 15:28:07 CET 2020
 ;; MSG SIZE  rcvd: 58
 ```
-## Prerequisite - CoreDNS
+
+## 09.3 - Prerequisite - CoreDNS
 In the previous lecture we saw why you need a DNS server and how it can help manage name resolution in large environments with many hostnames and Ips and how you can configure your hosts to point to a DNS server. In this article we will see how to configure a host as a DNS server.
 
 We are given a server dedicated as the DNS server, and a set of Ips to configure as entries in the server. There are many DNS server solutions out there, in this lecture we will focus on a particular one – CoreDNS.
@@ -221,7 +223,7 @@ https://github.com/kubernetes/dns/blob/master/docs/specification.md
 https://coredns.io/plugins/kubernetes/
 
 
-## Prerequisite - Network Namespaces
+## 09.4 - Prerequisite - Network Namespaces
 Los contenedores se separan del host mediante namespaces, lo cual permite que los procesos que corren dentro, no puedan acceder a los procesos de fuera, a menos que se indique lo contrario.
 Sin embargo el host, si puede ver los procesos de todos los contendores que corren en el.
 ```
@@ -237,11 +239,11 @@ root         9  0.0  0.0      0     0 ?        I    08:00   0:00 [rcu_bh]
 root        10  0.0  0.0      0     0 ?        S    08:00   0:00 [migration/0]
 ```
 
-## Prerequisite - Docker Networking
-## Prerequisite - CNI
-## Cluster Networking
+## 09.5 - Prerequisite - Docker Networking
+## 09.6 - Prerequisite - CNI
+## 09.7 - Cluster Networking
 
-## Pod Networking
+## 09.8 - Pod Networking
 Kubernetes espera que:
 - Cada Pod obtenga su propia IP
 - Cada Pod debería poder alcanzar cualquier otro Pod dentro del mismo nodo utilizando esa dirección IP, o de otro nodo.
@@ -279,7 +281,7 @@ La invocación del scrit podría ser algo así:
 ./net-script.sh add <container> <namespace>
 ```
 
-# CNI in kubernetes
+## 09.9 - CNI in kubernetes
 CNI define las responsabilidades del tiempo de ejcución del contenedor.
 - Container Runtime must create network namespace
 - Identify network the container must attach to
@@ -342,7 +344,7 @@ cat 10-bridge.conf
 }
 ```
 
-# CNI weave
+## 09.10 - CNI weave
 La solución que inicialmente se exponía, utilizaba un enrutador para enviar el tráfico, esto funciona cuando la red es muy pequeña y simple. 
 Para entornos granes con cientos de nodos, y cientos de PODs en cada nodo no es práctico, ya que es posible que la tabla de enrutamiento no adminta tantas entradas.
 
@@ -354,7 +356,7 @@ Un pod puede estar en varias redes, como por ejemplo en la red de Weave o en la 
 
 Weave se asegura de que todos los PODs obtengan la ruta correcta configurada para llegar al agente, cuando se envia un paquete de un pod a otro nodo, Weave intercepta el paquete e identifica que está en una red separada. Luego, encapsula el paquete en uno nuevo con nuevo origen y destino, y lo envia a traves de la red.
 
-## Deploy Weave
+### 09.10.1 - Deploy Weave
 Se puede implementar como servicios o daemon en cada nodo del cluster de forma manual. O si kubernetes ya está configurado se puede implementar como __daemonset__.
 
 ```
@@ -367,7 +369,7 @@ rolebinding.rbac.authorization.k8s.io/weave-net created
 daemonset.extensions/weave-net created
 ```
 
-## Weave peers
+### 09.10.2 - Weave peers
 Si implementó su cluster con kubeadm, puede verlo en cada nodo:
 ```bash
 kubectlget pods –n kube-system
@@ -406,7 +408,7 @@ INFO: 2019/03/03 03:41:09.331952 Discovered remote MAC 8a:31:f6:b1:38:3f at 8a:3
 INFO: 2019/03/03 03:41:09.355976 Discovered remote MAC 8a:a5:9c:d2:86:1f at 8a:31:f6:b1:38:3f(node0
 ```
 
-# IP Address Management - Weave
+## 09.11 - IP Address Management - Weave
 Esta sección cubre la herramienta que elimina redes y los nodos a asignados a una subred.
 
 CNI dice que el responsabilidad del proveedor se soluciones de red ocuparse de asignar IPs a los contendores.
@@ -433,18 +435,18 @@ cat  /etc/cni/net.d/10-bridge.conf
 ```
 
 
-# Service Networking
+## 09.12 - Service Networking
 Recapitulando anteriores temas, rara vez configuraremos dos pods para comunicarse directamente entre si.
 Si necesitamos que un pod acceda a servicios de otro pod, siempre utilizará un objecto SERVICE. El objecto Service se crea "delante" de un POD, y obtiene una dirección IP y un nombre, otros PODs, accederán mediante la IP o el nombre del Service.
 
-## Cluster IP
+### 09.12.1 - Cluster IP
 Cuando se crea un service es accesible desde todo el cluster, independientemente del nodo en el que se encuentren.
 
-## NodePort
+### 09.12.2 - NodePort
 Cuando necesitemos que un servicio se accesible desde fuera del cluster, utilizamos Service de tipo NodePort.
 También se le asigna una dirección IP y un nombre y es accesible desde el cluster, pero además expone la aplicación en un puerto en todos los nodos.
 
-## Networking
+### 09.12.3 - Networking
 El servicio kubelet es el encargado de crear los PODs, y observa los cambios del cluster a través del API Server.
 Cada vez que se crea un POD se invoca al complemento CNI para configurar la red para ese POD.
 
@@ -482,7 +484,7 @@ I0307 04:29:30.050701	1	proxier.go:294] Adding new service “default/db-service
 ```
 
 
-# DNS in kubernetes
+# 09.13 - DNS in kubernetes
 Kubernetes integra un servicio de DNS predeterminado. Cada vez que se crea un objecto Service, se crea un registro con nombre y IP del servicio.
 Por ello cualquier pod, puede llegar al servicio utilizando su nombre.
 
@@ -503,7 +505,7 @@ Con los PODs, ocurre lo mismo, sin embargo kubernetes sustituye los puntos de la
 ![dns_pod](../img/09_dns_pod.png)
 
 
-# CoreDNS in kubernetes
+# 09.14 - CoreDNS in kubernetes
 En las versionse previas a v1.12, kubernetes implementaba un servicio llamado kube-dns, desde esa versión hacia delante, el sevicio es llamado CoreDNS.
 
 El servidor CoreDNS se implementan como POD en el namespace kube-system.
@@ -586,7 +588,7 @@ host 10-224-2-5.default.pod.cluster.local
 ```
 
 
-# Ingress
+# 09.15 - Ingress
 Los Ingress ayudan a los usuarios a llegar a su aplicación, usando una única URL accesible externamente, que puede configurar para enrutar a diferente servicios dentro de su cluster. La ruta URL al mismo tiempo, implementa seguridad SSL, un Ingress es como un Loadl Balancer capa 7.
 
 Aún utilizando Ingress necesita exponerlo para que sea accesible desde fuera del cluster.
@@ -770,7 +772,7 @@ subjects:
     name: nginx-ingress-serviceaccount
 ```
 
-## Ingress Resource
+## 09.15.1 - Ingress Resource
 Un _Ingress Resource_ es un conjunto de reglas y configuraciones aplicadas en el _Ingress Controller_.
 
 Puede configurar reglas simplemente para reenviar todo el tráfico entrante a una sola aplicación o enrutar el tráfico a difrentes apilicaciones basado en URLs.
@@ -830,7 +832,7 @@ spec:
 ```
 
 
-## Ingress Annotations and rewrite-target
+## 09.15.2 - Ingress Annotations and rewrite-target
 Los diferentes Ingress Controller tienen difrentes opciones que pueden ser utilizadas para personalizar su comportamiento. 
 - Rewrite Target
 

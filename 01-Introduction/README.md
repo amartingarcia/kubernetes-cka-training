@@ -1,4 +1,4 @@
-# Introduction
+# 01 - Introducción
 Introducción al curso:
 
 * El examen se puede comprar en la siguiente web: https://www.cncf.io/certification/cka/
@@ -6,7 +6,7 @@ Introducción al curso:
 * No es un examen convencional, sino ejercicios que ponen a prueba sus conocimientos.
 * Podrá consultar la documentación oficial de kubernetes en el examen
 
-## Detalles de la certificación
+## 01.1 - Detalles de la certificación
 Algunas referencias al examen:
 * Administrador Certificado de Kubernetes: https://www.cncf.io/certification/cka/
 * Plan de estudios del examen (temas): https://github.com/cncf/curriculum

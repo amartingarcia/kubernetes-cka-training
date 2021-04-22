@@ -1,4 +1,4 @@
-# Desing a Kubernetes Cluster
+# 10 - Desing a Kubernetes Cluster
 Algunas preguntas que debe realizar para poder diseñar un cluster.
 - ¿Propósito?
   - Aprendizaje
@@ -17,7 +17,7 @@ Algunas preguntas que debe realizar para poder diseñar un cluster.
     - Continuo
     - Pesado
 
-## Propósito
+## 10.1 - Propósito
 * Soluciones para fines educativos:
   * Minikube
   * Mono-nodo con kubeadm/GCP/AWS
@@ -36,10 +36,10 @@ Algunas preguntas que debe realizar para poder diseñar un cluster.
 
 ![machine type](../img/10_machine_type.png)
 
-## Cloud o OnPrem
+## 10.2 - Cloud o OnPrem
 Para cloud hay multitud de herramientas para implementar un cluster. Pero para clusters _OnPrem_, _kubeadm_ es una herramienta muy util.
 
-### Storage
+### 10.2.1 - Storage
 Dependiendo de las cargas de trabajo configuradas, sus configuraciones de nodo y disco serán diferentes.
 - High Perfomance - SSD Backed storage
 - Multiple Concurrent connections - Network based storage
@@ -47,20 +47,20 @@ Dependiendo de las cargas de trabajo configuradas, sus configuraciones de nodo y
 - Label nodes with specific disk types
 - Use Node Selector to assing applications to nodes with specific disk types
 
-### Nodes
+### 10.2.2 - Nodes
 - Virtual o physical Machines
 - Minimum of 4 Node Cluster (size based on workload)
 - Master vs Worker Nodes
 - Linux X86_64 Architecture
   
-### Master Nodes
+### 10.2.3 - Master Nodes
 En clusters pequeños es posible que almacene todos los componentes del plano de control en los masters, sin embargo en cluster grandes, es conveniente separar ETCD del nodo maestro
 
 ![master_node](../img/10_master_node.png)
 
 
 
-# Configure HA
+# 10.3 - Configure HA
 Si tuvieramos dos masters, cada API Server tendría una dirección distinta:
 ```sh
 https://master1:6443
@@ -83,7 +83,7 @@ kube-controller-manager --leader-elect true                 # Posibilidad de ser
 Sobre ETCD, es interesante desacoplarlo de los masters, permitiendo así tener un menor riesgo a peder redudancia de datos si un nodo cae.
 
 
-# ETCD en HA
+# 10.4 - ETCD en HA
 ETCD es un sistema distribuido clave-valor, simple seguro y rápido.
 
 * Distribuido
