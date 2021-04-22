@@ -1,21 +1,21 @@
 # k8s-cka-certified
 ## Tabla de contenidos
 - [Tabla de contenidos](#tabla-de-contenidos)
-    - [] 
-- [Introduccion](#01-introduccion)
-- [Core Concepts](#02-core-concepts)
-- [Scheduling](#03-scheduling)
-- [Logging & monitoring](#04-logging--monitoring)
-- [Application Lifecycle Management](#application-lifecycle-management)
-- [Cluster maintenance](#cluster-maintenance)
-- [Security](#security)
-- [Storage](#storage)
-- [Networking](#networking)
-- [Install kubernetes hard way](#install-kubernetes-hard-way)
-- [install kubernetes the kubeadm](#install-kubernetes-the-kubeadm)
-- [End to End test on a Kubernetes cluster](#end-to-end-test-on-a-kubernetes-cluster)
-- [Troubleshooting](#troubleshooting)
-- [Other Topics](#other-topics)
+- [01.Introduccion](#01---introduccion)
+    - [01.1.Detalles de la certificación](#011---detalles-de-la-certificación)
+- [02.Core Concepts](#02---conceptos-principales)
+- [03.Scheduling](#03---scheduling)
+- [04.Logging & monitoring](#04---logging-monitoring)
+- [Application Lifecycle Management](#05---application-lifecycle-management)
+- [Cluster maintenance](#06---cluster-maintenance)
+- [Security](#07---security)
+- [Storage](#08---storage)
+- [Networking](#09---networking)
+- [Install kubernetes hard way](#10---install-kubernetes-hard-way)
+- [install kubernetes the kubeadm](#11---install-kubernetes-the-kubeadm)
+- [End to End test on a Kubernetes cluster](#12---end-to-end-test-on-a-kubernetes-cluster)
+- [Troubleshooting](#13---troubleshooting)
+- [Other Topics](#14---other-topics)
 
 ## 01 - Introducción
 La finalidad de este repositorio es tener una guia para obtener la certificación de Kubernetes __CKA__.
