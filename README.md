@@ -2,20 +2,19 @@
 ## Tabla de contenidos
 - [Tabla de contenidos](#tabla-de-contenidos)
 - [01.Introduccion](#01---introduccion)
-    - [01.1.Detalles de la certificación](#011---detalles-de-la-certificación)
 - [02.Core Concepts](#02---conceptos-principales)
 - [03.Scheduling](#03---scheduling)
 - [04.Logging & monitoring](#04---logging-monitoring)
-- [Application Lifecycle Management](#05---application-lifecycle-management)
-- [Cluster maintenance](#06---cluster-maintenance)
-- [Security](#07---security)
-- [Storage](#08---storage)
-- [Networking](#09---networking)
-- [Install kubernetes hard way](#10---install-kubernetes-hard-way)
-- [install kubernetes the kubeadm](#11---install-kubernetes-the-kubeadm)
-- [End to End test on a Kubernetes cluster](#12---end-to-end-test-on-a-kubernetes-cluster)
-- [Troubleshooting](#13---troubleshooting)
-- [Other Topics](#14---other-topics)
+- [05.Application Lifecycle Management](#05---application-lifecycle-management)
+- [06.Cluster maintenance](#06---cluster-maintenance)
+- [07.Security](#07---security)
+- [08.Storage](#08---storage)
+- [09.Networking](#09---networking)
+- [10.Install kubernetes hard way](#10---install-kubernetes-hard-way)
+- [11.install kubernetes the kubeadm](#11---install-kubernetes-the-kubeadm)
+- [12.End to End test on a Kubernetes cluster](#12---end-to-end-test-on-a-kubernetes-cluster)
+- [13.Troubleshooting](#13---troubleshooting)
+- [14.Other Topics](#14---other-topics)
 
 ## 01 - Introducción
 La finalidad de este repositorio es tener una guia para obtener la certificación de Kubernetes __CKA__.
@@ -101,7 +100,7 @@ Use the code - show code in Udemy - while registering for the CKA or CKAD exams 
 
 
 
-# #07 - Security
+## 07 - Security
 ### 07.1 - Kubernetes Security Primivite
 ### 07.2 - Authentication
 ### 07.3 - TLS Introduction
@@ -499,7 +498,7 @@ spec:
 
 
 
-# 08 Storage
+## 08 Storage
 ### 08.1 - Volumes
 The containers are intended to last for a short period of time.
 They are requested when they are needed to die, and their data are destroyed with the container.
@@ -1234,7 +1233,7 @@ I0307 04:29:30.050701	1	proxier.go:294] Adding new service “default/db-service
 ```
 
 
-# 09.13 - DNS in kubernetes
+### 09.13 - DNS in kubernetes
 Kubernetes integra un servicio de DNS predeterminado. Cada vez que se crea un objecto Service, se crea un registro con nombre y IP del servicio.
 Por ello cualquier pod, puede llegar al servicio utilizando su nombre.
 
@@ -1255,7 +1254,7 @@ Con los PODs, ocurre lo mismo, sin embargo kubernetes sustituye los puntos de la
 ![dns_pod](../img/09_dns_pod.png)
 
 
-# 09.14 - CoreDNS in kubernetes
+### 09.14 - CoreDNS in kubernetes
 En las versionse previas a v1.12, kubernetes implementaba un servicio llamado kube-dns, desde esa versión hacia delante, el sevicio es llamado CoreDNS.
 
 El servidor CoreDNS se implementan como POD en el namespace kube-system.
@@ -1338,7 +1337,7 @@ host 10-224-2-5.default.pod.cluster.local
 ```
 
 
-# 09.15 - Ingress
+### 09.15 - Ingress
 Los Ingress ayudan a los usuarios a llegar a su aplicación, usando una única URL accesible externamente, que puede configurar para enrutar a diferente servicios dentro de su cluster. La ruta URL al mismo tiempo, implementa seguridad SSL, un Ingress es como un Loadl Balancer capa 7.
 
 Aún utilizando Ingress necesita exponerlo para que sea accesible desde fuera del cluster.
@@ -1347,7 +1346,7 @@ Kubernetes despliega una solución compatible, como pueden ser Nginx, HAProxy o 
 
 Por defecto, nuestro cluster no viene con ningún _Ingress Controller_.
 
-## Ingress Controller
+### 09.16 - Ingress Controller
 Existen varias soluciones disponibles:
 - GCP HTTP(S) Load Balancer	 (apoyado y mantenido por el proyecto Kubernetes)
 - Nginx (apoyado y mantenido por el proyecto Kubernetes)
@@ -1649,7 +1648,7 @@ In another example given here, this could also be:
 ```
 
 
-# 10 - Desing a Kubernetes Cluster
+## 10 - Desing a Kubernetes Cluster
 Algunas preguntas que debe realizar para poder diseñar un cluster.
 - ¿Propósito?
   - Aprendizaje
@@ -1668,7 +1667,7 @@ Algunas preguntas que debe realizar para poder diseñar un cluster.
     - Continuo
     - Pesado
 
-## 10.1 - Propósito
+### 10.1 - Propósito
 * Soluciones para fines educativos:
   * Minikube
   * Mono-nodo con kubeadm/GCP/AWS
@@ -1711,7 +1710,7 @@ En clusters pequeños es posible que almacene todos los componentes del plano de
 
 
 
-# 10.3 - Configure HA
+### 10.3 - Configure HA
 Si tuvieramos dos masters, cada API Server tendría una dirección distinta:
 ```bash
 https://master1:6443
@@ -1734,7 +1733,7 @@ kube-controller-manager --leader-elect true                 # Posibilidad de ser
 Sobre ETCD, es interesante desacoplarlo de los masters, permitiendo así tener un menor riesgo a peder redudancia de datos si un nodo cae.
 
 
-# 10.4 - ETCD en HA
+### 10.4 - ETCD en HA
 ETCD es un sistema distribuido clave-valor, simple seguro y rápido.
 
 * Distribuido
@@ -1759,7 +1758,7 @@ Quorum of 5 = 5/3 +1 = 3.5 ~= 3
 
 
 
-# Install kubernetes hard way
+## Install kubernetes hard way
 
 
 
@@ -1771,8 +1770,8 @@ Quorum of 5 = 5/3 +1 = 3.5 ~= 3
 
 
 
-# 11 - Troubleshooting
-## 11.1 - Fallos de aplicación
+## 11 - Troubleshooting
+### 11.1 - Fallos de aplicación
 Partiendo de una aplicación web con dos componentes: Servidor Web y BBDD. Debemos comprender todos los componentes/objetos que existen en todo el flujo.
 
 ![application](../img/11_troubleshooting_applications.png)
@@ -1864,7 +1863,7 @@ kubectl logs web -f(same tail -f) --previous (show previous pod)
 4. Continuando con el análisis, compruebe el servicio de la BBDD y el Pod que contiene la BBDD.
 5. Puede consultar la página de Kubernetes (https://kubernetes.io/docs/tasks/debug-application-cluster/debug-application/), aparcen algunos ejemplos más sobre troubleshooting de aplicaciones.
 
-## 11.2 - Fallos en Control Plane (Plano de control)
+### 11.2 - Fallos en Control Plane (Plano de control)
 En este punto veremos comprobar fallos en los componentes del Plano de Control (Control Plane).
 
 1. Comprobaremos el estado de los nodos
@@ -2004,7 +2003,7 @@ Mar 20 07:57:25 master-1 kube-apiserver[15767]: I0320 07:57:25.558514 15767 flag
 Mar 20 07:57:25 master-1 kube-apiserver[15767]: I0320 07:57:25.558528 15767 flags.go:33] FLAG: --audit-log-format="json"
 ```
 
-## 11.3 - Fallos en nodos Worker
+### 11.3 - Fallos en nodos Worker
 Cuando experimentamos fallos en los Nodos Worker, es un buen comienzo, realizar el siguiente análisis.
 
 1. Comprobamos el estado de los nodos
@@ -2131,7 +2130,7 @@ f6:f8:7f:eb:5d:59:94:46:d8:da:37:75:cf:27:0b:
 ...
 ```
 
-## 11.4 -Troubleshooting de red
+### 11.4 -Troubleshooting de red
 Kubernetes utiliza plugins CNI para configurar la red. El kubelet se encarga de ejecutar los plugins.
 
 * `cni-bin-dir`: Kubelet busca este directorio en busca de plugins en el arranque
@@ -2145,7 +2144,7 @@ Hay varios plugins disponibles y estos son algunos:
 
 > Nota: Si hay varios archivos de configuración CNI en el directorio,  kubelet utilizará el archivo de configuración que viene primero por nombre en orden lexicográfico.
 
-### 11.4.1 - DNS en Kubernetes
+#### 11.4.1 - DNS en Kubernetes
 
 Kubernetes utiliza `CoreDNS`, es un servidor DNS flexible y extensible que puede servir como DNS del clúster Kubernetes.
 
@@ -2178,7 +2177,7 @@ Este es el backend de k8s para cluster.local y dominios inversos.
 Reenvía los dominios fuera del clúster directamente al servidor DNS autoritativo correcto.
 
 
-### 11.4.2 - Troubleshooting para coreDNS
+#### 11.4.2 - Troubleshooting para coreDNS
 
 1. Si encuentra pods `CoreDNS` en estado `Pending`, compruebe primero que el plugin de red está instalado.
 
@@ -2219,7 +2218,7 @@ Si no hay `Endpoints` en el `Service`, inspeccionle y compruebe que utiliza `Sel
 nslookup <service-name>.<namespace>
 ```
 
-### 11.4.3 - Troubleshooting para kube-proxy
+#### 11.4.3 - Troubleshooting para kube-proxy
 
 `kube-proxy` es un proxy de red que se ejecuta en cada nodo del cluster y mantiene reglas de red en los nodos. 
 Estas reglas de red permiten la comunicación de red a los Pods desde sesiones de red dentro o fuera del cluster.
@@ -2262,9 +2261,9 @@ tcp6       0      0 :::10256                :::*
 
 
 
-# 12 - Other Topics
-## 12.1 - JSON PATH
-## 12.2 - Advance Kubectl Commands
+## 12 - Other Topics
+### 12.1 - JSON PATH
+### 12.2 - Advance Kubectl Commands
 
 
 
