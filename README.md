@@ -40,6 +40,32 @@ Use the code - show code in Udemy - while registering for the CKA or CKAD exams 
 
 ## 02 - Conceptos principales
 ### 02.1 - Arquitectura del Cluster
+El propósito de Kubernetes es alojar sus aplicaciones en forma de Pods de manera automatizada, para que pueda implementar tantas instancias como necesite, y facilitar la comunicación entre sus aplicaciones.
+
+Un cluster de kubernetes consta de un conjunto de nodos (fisicos o virtuales), que alojan aplicaciones en forma de Pods.
+
+* Los nodos __Masters__, son los responsables de administrar el cluster, y todas las tareas las lleva a través de un conjunto de componentes, llamados __Control Plane__ (Plano de Control).
+* Los nodos __Workers__, están destinados a alojar los Pods.
+
+Componentes del Plano de Control:
+* ETCD: es una base de datos que almacena la información en un formato clave-valor (key-value).
+* kube-scheduler: es un componente del cluster que se encarga de planificar donde se alojarán los Pods, en base a etiquetas del Nodo o del Pod, capacidad, políticas o restricciones, y afinidad entre el Nodo y el Pod.
+* Node-Controller: se encarga de los Nodos, es el responsable de comprobar si los nodos están disponibles o no.
+* Replication-Controller: se encarga de los Pods, y de que se estén ejecutando el número de Pods que indica su Replication-Groups.
+* kube-apiserver: es el componente de gestión principal, es el responsable de orquestar todas las operaciones del cluster. Expone el API de Kubernetes que utilizan los usuarios externos para realizar operaciones de administración, asi como los distintos controladores para monitorizar el cluster.
+
+> Dado que las aplicaciones se ejecutan en contendores, los nodos (Master y Workers) necesitarán tener un motor para ejecutarlos (Containe Runtime), uno popular es Docker. Kubernetes es compatible con otros Containers Runtime, como ContainerD o Rocket (RKT).
+
+* Kubelet: es un servicio que se ejecuta en todos los nodos, escucha las intrucciones del kube-apiserver, y destruye o crea contenedores en base a la información que le proporciona el kube-apiserver.
+* kube-apiserver: solicita información sobre el estado de los Pods que se encuentran en los nodos, a través de Kubelet.
+* kube-proxy: es un servicio que corre en todos los nodos, y mantiene la comunicación entre nodos, para la comunicación entre Pods.
+
+Ejemplo de arquitectura con buques.
+![arch_1](img/1_k8s_arch.png)
+
+Ejemplo de arquitectura.
+![arch_2](img/1_k8s_arch_1.png)
+
 ### 02.2 - ETCD para principiantes
 ### 02.3 - ETCD en Kubernetes
 ### 02.4 - Kube API Server
