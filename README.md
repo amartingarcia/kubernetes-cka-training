@@ -64,22 +64,159 @@ Ejemplo de arquitectura con buques.
 ![arch_1](img/1_k8s_arch.png)
 
 
-### 02.2 - ETCD para principiantes
-### 02.3 - ETCD en Kubernetes
-### 02.4 - Kube API Server
-### 02.5 - Kube Controller Manage
-### 02.6 - Kube Scheduler
-### 02.7 - Kubelet
-### 02.8 - Kube-proxy
-### 02.9 - Pods
-### 02.10 - ReplicaSet
-### 02.11 - Deployments
-### 02.12 - Namespaces
-### 02.13 - Services
-#### 02.13.1 - Services - ClusterIP
-#### 02.13.2 -Services - LoadBalance
-### 02.14 - Imperativo Vs Declarativo
-### 02.15 - kubectl apply (Comandos)
+### 02.2 - ETCD
+#### 02.2.1 - Que es ETCD
+ETCD es una base de datos clave-valor distribuida que es simple, segura y rápida.
+
+#### 02.2.1 - Como instalar ETCD
+Puede usar ETCD ejecutando los siguientes pasos:
+```sh
+# Download file
+curl -L https://github.com/coreos/etcd/releases/download/v3.3.1/etcd-v3.3.1-linux-amd64.tar.gz -o etcd-v3.3.1-linux-amd64.tar.gz
+
+# decompress:
+tar xzvf etcd-v3.3.1-linux-amd64.tar.gz
+
+# Execute:
+./etcd
+```
+
+Cuando ejecuta ETCD inicia un servicio que escucha en el puerto 2379 por defecto.
+
+Existe un cliente de linea de comando que permite interactuar con la BBDD:
+```sh
+# Set value
+./etcdctl set key1 value1
+
+# Get value
+./etcdctl get key1
+```
+
+#### 02.2.2 - ETCD en Kubernetes
+ETCD almacena información sobre Nodos, Pods, Roles, Secrets, etc.
+
+Toda la información que proviene de kubectl (cliente de kubernetes en linea de comandos), proviene de ETCD.
+Cada cambio que realicemos en el cluster actualiza el ETCD, solo una vez que se actualice ETCD, el cambio se considerará completo.
+
+Puede configurar ETCD de distintas formas, en este caso configuraremos ETCD desde cero, y con kubeadm.
+
+* Configuración manual:
+```sh
+# Descargamos el fichero
+wget -q --https-only \ "https://github.com/coreos/etcd/releases/download/v3.3.9/etcd-v3.3.9-linux-amd64.tar.gz"
+
+# Instalación etcd como servicio
+etcd.service
+
+ExecStart=/usr/local/bin/etcd \\
+--name ${ETCD_NAME} \\ 
+--cert-file=/etc/etcd/kubernetes.pem \\ 
+--key-file=/etc/etcd/kubernetes-key.pem \\ 
+--peer-cert-file=/etc/etcd/kubernetes.pem \\ 
+--peer-key-file=/etc/etcd/kubernetes-key.pem \\ 
+--trusted-ca-file=/etc/etcd/ca.pem \\ 
+--peer-trusted-ca-file=/etc/etcd/ca.pem \\ 
+--peer-client-cert-auth \\
+--client-cert-auth \\
+--initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
+--listen-peer-urls https://${INTERNAL_IP}:2380 \\
+--listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
+--advertise-client-urls https://${INTERNAL_IP}:2379 \\
+--initial-cluster-token etcd-cluster-0 \\
+--initial-cluster-controller-0=https://${CONTROLLER0_IP}:2380,controller-1=https://${CONTROLLER1_IP}:2380 \\ # ETCD Nodes IPs
+--initial-cluster-state new \\
+--data-dir=/var/lib/etcd
+```
+
+* Configuración con kubeadm:
+```sh
+# Implementación como pod
+kubectl get pods -n kube-system | grep etc
+
+NAMESPACE    NAME         READY  STATUS   RESTARTS  AGE
+kube-system  etcd-master  1/1    Running  0         1h
+
+# Interactua con la BBDD desde dentro del pod
+ 
+kubectl exec etcd-master –n kube-system etcdctl get / --prefix –keys-only
+/registry/apiregistration.k8s.io/apiservices/v1. 
+/registry/apiregistration.k8s.io/apiservices/v1.apps 
+/registry/apiregistration.k8s.io/apiservices/v1.authentication.k8s.io 
+/registry/apiregistration.k8s.io/apiservices/v1.authorization.k8s.io 
+/registry/apiregistration.k8s.io/apiservices/v1.autoscaling 
+/registry/apiregistration.k8s.io/apiservices/v1.batch 
+/registry/apiregistration.k8s.io/apiservices/v1.networking.k8s.io 
+/registry/apiregistration.k8s.io/apiservices/v1.rbac.authorization.k8s.io 
+/registry/apiregistration.k8s.io/apiservices/v1.storage.k8s.io
+```
+
+En un entorno de alta disponibilidad (HA), tendrá varios nodos Masters, y tendrá varias instancias de ETCD distribuidas entre los nodos Masters.
+En ese caso, tendrá que configurar la declaración y conexión entre los nodos del cluster de ETCD
+```sh
+etcd.service
+ExecStart=/usr/local/bin/etcd \\
+--name ${ETCD_NAME} \\ --cert-file=/etc/etcd/kubernetes.pem \\ --key-file=/etc/etcd/kubernetes-key.pem \\ --peer-cert-file=/etc/etcd/kubernetes.pem \\ --peer-key-file=/etc/etcd/kubernetes-key.pem \\ --trusted-ca-file=/etc/etcd/ca.pem \\ --peer-trusted-ca-file=/etc/etcd/ca.pem \\ --peer-client-cert-auth \\
+--client-cert-auth \\
+--initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
+--listen-peer-urls https://${INTERNAL_IP}:2380 \\
+--listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
+--advertise-client-urls https://${INTERNAL_IP}:2379 \\
+--initial-cluster-token etcd-cluster-0 \\
+--initial-cluster controller-0=https://${CONTROLLER0_IP}:2380,controller-1=https://${CONTROLLER1_IP}:2380 \\ --initial-cluster-state new \\
+--data-dir=/var/lib/etcd
+```
+
+#### 02.2.3 - ETCD commands
+`etcdctl` es la herramienta CLI utilizada para interactuar con ETCD.
+
+ETCDCTL puede interactuar con el Servidor ETCD utilizando 2 versiones de la API - `Versión 2` y `Versión 3`.  
+__Por defecto está configurado para usar la versión 2__. Cada versión tiene diferentes conjuntos de comandos.
+
+Soporta los siguientes comandos:
+```sh
+# Version 2
+etcdctl backup
+etcdctl cluster-health
+etcdctl mk
+etcdctl mkdir
+etcdctl set
+
+# Version 3
+etcdctl snapshot save 
+etcdctl endpoint health
+etcdctl get
+etcdctl put
+
+# Para establecer la versión correcta de la API establezca la variable de entorno ETCDCTL_API
+export ETCDCTL_API=3
+```
+
+Debes especificar la ruta a los archivos de certificado para que ETCDCTL pueda autenticarse en el servidor de la API de ETCD. Los archivos de certificados están disponibles en el etcd-master en la siguiente ruta.
+
+* --cacert /etc/kubernetes/pki/etcd/ca.crt     
+* --cert /etc/kubernetes/pki/etcd/server.crt     
+* --key /etc/kubernetes/pki/etcd/server.key
+
+Comando final:
+```sh
+kubectl exec etcd-master -n kube-system -- sh -c "ETCDCTL_API=3 
+```
+
+
+### 02.3 - Kube API Server
+### 02.4 - Kube Controller Manage
+### 02.5 - Kube Scheduler
+### 02.6 - Kubelet
+### 02.7 - Kube-proxy
+### 02.8 - Pods
+### 02.9- ReplicaSet
+### 02.10 - Deployments
+### 02.11 - Namespaces
+### 02.12 - Services
+#### 02.12.1 - Services - ClusterIP
+#### 02.12.2 -Services - LoadBalance
+### 02.13 - Imperativo Vs Declarativo
+### 02.13 - kubectl apply (Comandos)
 
 
 
