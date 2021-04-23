@@ -63,8 +63,6 @@ Componentes del Plano de Control:
 Ejemplo de arquitectura con buques.
 ![arch_1](img/1_k8s_arch.png)
 
-Ejemplo de arquitectura.
-![arch_2](img/1_k8s_arch_1.png)
 
 ### 02.2 - ETCD para principiantes
 ### 02.3 - ETCD en Kubernetes
