@@ -48,17 +48,17 @@ Un cluster de kubernetes consta de un conjunto de nodos (fisicos o virtuales), q
 * Los nodos __Workers__, están destinados a alojar los Pods.
 
 Componentes del Plano de Control:
-* ETCD: es una base de datos que almacena la información en un formato clave-valor (key-value).
-* kube-scheduler: es un componente del cluster que se encarga de planificar donde se alojarán los Pods, en base a etiquetas del Nodo o del Pod, capacidad, políticas o restricciones, y afinidad entre el Nodo y el Pod.
-* Node-Controller: se encarga de los Nodos, es el responsable de comprobar si los nodos están disponibles o no.
-* Replication-Controller: se encarga de los Pods, y de que se estén ejecutando el número de Pods que indica su Replication-Groups.
-* kube-apiserver: es el componente de gestión principal, es el responsable de orquestar todas las operaciones del cluster. Expone el API de Kubernetes que utilizan los usuarios externos para realizar operaciones de administración, asi como los distintos controladores para monitorizar el cluster.
+* __ETCD__: es una base de datos que almacena la información en un formato clave-valor (key-value).
+* __kube-scheduler__: es un componente del cluster que se encarga de planificar donde se alojarán los Pods, en base a etiquetas del Nodo o del Pod, capacidad, políticas o restricciones, y afinidad entre el Nodo y el Pod.
+* __Node-Controller__: se encarga de los Nodos, es el responsable de comprobar si los nodos están disponibles o no.
+* __Replication-Controller__: se encarga de los Pods, y de que se estén ejecutando el número de Pods que indica su Replication-Groups.
+* __kube-apiserver__: es el componente de gestión principal, es el responsable de orquestar todas las operaciones del cluster. Expone el API de Kubernetes que utilizan los usuarios externos para realizar operaciones de administración, asi como los distintos controladores para monitorizar el cluster.
 
 > Dado que las aplicaciones se ejecutan en contendores, los nodos (Master y Workers) necesitarán tener un motor para ejecutarlos (Containe Runtime), uno popular es Docker. Kubernetes es compatible con otros Containers Runtime, como ContainerD o Rocket (RKT).
 
-* Kubelet: es un servicio que se ejecuta en todos los nodos, escucha las intrucciones del kube-apiserver, y destruye o crea contenedores en base a la información que le proporciona el kube-apiserver.
-* kube-apiserver: solicita información sobre el estado de los Pods que se encuentran en los nodos, a través de Kubelet.
-* kube-proxy: es un servicio que corre en todos los nodos, y mantiene la comunicación entre nodos, para la comunicación entre Pods.
+* __Kubelet__: es un servicio que se ejecuta en todos los nodos, escucha las intrucciones del kube-apiserver, y destruye o crea contenedores en base a la información que le proporciona el kube-apiserver.
+* __kube-apiserver__: solicita información sobre el estado de los Pods que se encuentran en los nodos, a través de Kubelet.
+* __kube-proxy__: es un servicio que corre en todos los nodos, y mantiene la comunicación entre nodos, para la comunicación entre Pods.
 
 Ejemplo de arquitectura con buques.
 ![arch_1](img/1_k8s_arch.png)
@@ -81,7 +81,7 @@ tar xzvf etcd-v3.3.1-linux-amd64.tar.gz
 ./etcd
 ```
 
-Cuando ejecuta ETCD inicia un servicio que escucha en el puerto 2379 por defecto.
+Cuando ejecuta ETCD inicia un servicio que escucha en el __puerto 2380__ por defecto.
 
 Existe un cliente de linea de comando que permite interactuar con la BBDD:
 ```sh
@@ -105,7 +105,7 @@ Puede configurar ETCD de distintas formas, en este caso configuraremos ETCD desd
 # Descargamos el fichero
 wget -q --https-only \ "https://github.com/coreos/etcd/releases/download/v3.3.9/etcd-v3.3.9-linux-amd64.tar.gz"
 
-# Instalación etcd como servicio
+# Show etcd.service
 etcd.service
 
 ExecStart=/usr/local/bin/etcd \\
@@ -137,8 +137,8 @@ NAMESPACE    NAME         READY  STATUS   RESTARTS  AGE
 kube-system  etcd-master  1/1    Running  0         1h
 
 # Interactua con la BBDD desde dentro del pod
- 
 kubectl exec etcd-master –n kube-system etcdctl get / --prefix –keys-only
+
 /registry/apiregistration.k8s.io/apiservices/v1. 
 /registry/apiregistration.k8s.io/apiservices/v1.apps 
 /registry/apiregistration.k8s.io/apiservices/v1.authentication.k8s.io 
@@ -153,7 +153,9 @@ kubectl exec etcd-master –n kube-system etcdctl get / --prefix –keys-only
 En un entorno de alta disponibilidad (HA), tendrá varios nodos Masters, y tendrá varias instancias de ETCD distribuidas entre los nodos Masters.
 En ese caso, tendrá que configurar la declaración y conexión entre los nodos del cluster de ETCD
 ```sh
+# Show etcd.service
 etcd.service
+
 ExecStart=/usr/local/bin/etcd \\
 --name ${ETCD_NAME} \\ --cert-file=/etc/etcd/kubernetes.pem \\ --key-file=/etc/etcd/kubernetes-key.pem \\ --peer-cert-file=/etc/etcd/kubernetes.pem \\ --peer-key-file=/etc/etcd/kubernetes-key.pem \\ --trusted-ca-file=/etc/etcd/ca.pem \\ --peer-trusted-ca-file=/etc/etcd/ca.pem \\ --peer-client-cert-auth \\
 --client-cert-auth \\
