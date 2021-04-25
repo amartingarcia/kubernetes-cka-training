@@ -206,6 +206,90 @@ kubectl exec etcd-master -n kube-system -- sh -c "ETCDCTL_API=3
 
 
 ### 02.3 - Kube API Server
+API Server, es el componente de adminstración principal del cluster de kubernetes.
+
+Cuando ejecuta comandos con kubectl, la solicitud llega al APIServer, este primero autentica la solicitud y la valida, obtiene los datos del ETCD y responde con la información solicitada.
+
+Flujo de creación de objetos (para realizar los cambios se sigue un flujo similar):
+1. APIServer crea un Pod sin asignarlo a ningún nodo.
+2. APIServer actualiza el estado del pod en cluster de ETCD.
+3. APIServer responde al usuario sobre el estado de su solicitud.
+4. Scheduler monitoriza el APIServer, y se da cuenta de que hay un nuevo Pod sin asignar a ningún nodo.
+5. Scheduler identifica el nodo correcto, y se lo comunica al APIServer.
+6. APIServer actualiza ETCD con la nueva información.
+7. APIServer se comunica con el nodo donde se va colocar el pod, a través de kubelet.
+8. Kubelet crea el pod y comunica al Container Runtime la imagen o imagenes del Pod.
+9. Kubelet actualiza el estado del Pod al APIServer.
+10. APIServer actualiza el estado del Pod a ETCD.
+
+APIServer es el responsable de autenticar, validar solicitudes, recuperar y actualizar datos en el cluster de ETCD (es el único componente que se comunica con el).
+
+La arquitectura de Kubernetes consiste en una gran cantidad de componentes diferentes que trabajan entre si.
+
+Depende como configure su cluster, podrá ver las opciones de kube-APIServer.
+* Manifiesto YAML
+```sh
+cat /etc/kubernetes/manifests/kube-apiserver.yaml
+
+spec:
+  containers:
+- command:
+  - kube-apiserver
+  - --authorization-mode=Node,RBAC
+  - --advertise-address=172.17.0.32
+  - --allow-privileged=true
+  - --client-ca-file=/etc/kubernetes/pki/ca.crt
+  - --disable-admission-plugins=PersistentVolumeLabel
+  - --enable-admission-plugins=NodeRestriction
+  - --enable-bootstrap-token-auth=true
+  - --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt
+  - --etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt
+  - --etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key
+  - --etcd-servers=https://127.0.0.1:2379
+  - --insecure-port=0
+  - --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt - --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key
+  - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+  - --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt
+  - --proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key
+  - --requestheader-allowed-names=front-proxy-client
+  - --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt
+  - --requestheader-extra-headers-prefix=X-Remote-Extra-
+  - --requestheader-group-headers=X-Remote-Group
+  - --requestheader-username-headers=X-Remote-User
+```
+
+* Como servicio:
+```sh
+cat /etc/systemd/system/kube-apiserver.service
+
+[Service] ExecStart=/usr/local/bin/kube-apiserver \\
+--advertise-address=${INTERNAL_IP} \\ 
+--allow-privileged=true \\ 
+--apiserver-count=3 \\
+--audit-log-maxage=30 \\ 
+--audit-log-maxbackup=3 \\ 
+--audit-log-maxsize=100 \\ 
+--audit-log-path=/var/log/audit.log \\ 
+--authorization-mode=Node,RBAC \\ 
+--bind-address=0.0.0.0 \\ --client-ca-file=/var/lib/kubernetes/ca.pem \\ 
+--enable-admission-plugins=Initializers,NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,Defa ultStorageClass,ResourceQuota \\
+--enable-swagger-ui=true \\ --etcd-cafile=/var/lib/kubernetes/ca.pem \\ 
+--etcd-certfile=/var/lib/kubernetes/kubernetes.pem \\ 
+--etcd-keyfile=/var/lib/kubernetes/kubernetes-key.pem \\ 
+--etcd-servers=https://10.240.0.10:2379,https://10.240.0.11:2379,https://10.240.0.12:2379 \\ 
+--event-ttl=1h \\ 
+--experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
+--kubelet-certificate-authority=/var/lib/kubernetes/ca.pem \\ 
+--kubelet-client-certificate=/var/lib/kubernetes/kubernetes.pem \\
+```
+
+* Como proceso
+```sh
+ps -aux | grep kube-apiserver
+
+root 2348 3.3 15.4 399040 315604 ? Ssl 15:46 1:22 kube-apiserver --authorization-mode=Node,RBAC -- advertise-address=172.17.0.32 --allow-privileged=true --client-ca-file=/etc/kubernetes/pki/ca.crt --disable- admission-plugins=PersistentVolumeLabel --enable-admission-plugins=NodeRestriction--enable-bootstrap-token- auth=true --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt --etcd-certfile=/etc/kubernetes/pki/apiserver-etcd- client.crt --etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key --etcd-servers=https://127.0.0.1:2379 -- insecure-port=0 --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt --kubelet-client- key=/etc/kubernetes/pki/apiserver-kubelet-client.key --kubelet-preferred-address- types=InternalIP,ExternalIP,Hostname --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt --proxy- client-key-file=/etc/kubernetes/pki/front-proxy-client.key--requestheader-allowed-names=front-proxy-client -- requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt --requestheader-extra-headers-prefix=X-Remote- Extra- --requestheader-group-headers=X-Remote-Group --requestheader-username-headers=X-Remote-User --secure- port=6443 --service-account-key-file=/etc/kubernetes/pki/sa.pub --service-cluster-ip-range=10.96.0.0/12 --tls- cert-file=/etc/kubernetes/pki/apiserver.crt --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
+```
+
 ### 02.4 - Kube Controller Manage
 ### 02.5 - Kube Scheduler
 ### 02.6 - Kubelet
