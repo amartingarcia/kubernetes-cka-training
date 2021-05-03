@@ -656,9 +656,9 @@ spec:                  # Especificaciones para el ReplicaSet.
 kubectl create -f rc-definition.yaml
 replicationconrtoller "myapp-replicaset" created!
 
-# Listamos los Replication Controllers
+# Listamos los ReplicaSet
 kubectl get replicaset
-NAME       DESIRED   CURRENT   READY   AGE
+NAME               DESIRED   CURRENT   READY   AGE
 myapp-replicaset   3         3         3       72s
 
 # Listamos los pods
@@ -684,13 +684,96 @@ kubectl edit myapp-replicaset
 
 # Seteando nuevo valor con kubectl
 kubectl scale --replicas=6 -f replicast-definition.yaml
-kubectl scale --replicas=6 replicaset myapp-replicaset
- 
+kubectl scale --replicas=6 replicaset myapp-replicaset 
 ```
 
 
-
 ### 02.10 - Deployments
+Los Deployments, son objectos de kubernetes, que permiten ejecutar Rolling update, Roll-backs, actualizar la versión de sus aplicaciones, cambiar asignaciones de recursos, variables de entorno, escalado, pausar y reanudar cambios según la necesidad, etc.
+
+Para comprender que otros objectos controlan los Deployments observemos la siguiente imagen.
+IMAGEN DEPLOYMENT
+
+Un ejemplo de manifiesto de Deployment:
+```yaml
+apiVersion: apps/v1
+kind: Deployment        # Con respecto a los RS, cambia la propiedad Kind
+metadata:
+  name: myapp-deployment
+  labels:
+    app: myapp
+    type: front-end
+spec:
+  template:
+    metadata:
+      name: myapp-pod
+      labels:
+        app: myapp
+        type: front-end
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx
+  replicas: 3
+  selector:
+    matchLabels:
+    type: front-end
+```
+* Creamos el Deployment definido:
+```bash
+kubectl create -f deployment-definition.yaml
+deployment "myapp-deployment" created!
+
+# Listamos los Deployments
+kubectl get deployments
+NAME               DESIRED   CURRENT   READY   AGE
+myapp-deployment   3         3         3       72s
+
+# Listamos los Replicationset
+kubectl get replicaset
+NAME                            DESIRED   CURRENT   READY   AGE
+myapp-deployment-325423452345   3         3         3       72s
+
+# Listamos los pods
+kubectl get pod
+NAME                                  READY   STATUS    RESTARTS   AGE
+myapp-deployment-325423452345-gr4hm   1/1     Running   0          33s
+myapp-deployment-325423452345-kwm72   1/1     Running   0          33s
+myapp-deployment-325423452345-szjkd   1/1     Running   0          33s
+
+# todos los objetos creados
+kubectl get all
+NAME                      DESIRED   CURRENT   READY   AGE
+deploy/myapp-deployment   3         3         3       72s
+
+NAME                               DESIRED   CURRENT   READY   AGE
+rs/myapp-deployment-325423452345   3         3         3       72s
+
+NAME                                     READY   STATUS    RESTARTS   AGE
+po/myapp-deployment-325423452345-gr4hm   1/1     Running   0          33s
+po/myapp-deployment-325423452345-kwm72   1/1     Running   0          33s
+po/myapp-deployment-325423452345-szjkd   1/1     Running   0          33s
+```
+
+Algunos comando necesarios:
+```bash
+# Crear un pod
+kubectl run nginx --image=nginx
+
+# Crear el manifiesto de un pod a partir de kubectl
+kubectl run nginx --image=nginx --dry-run=client -o yaml > pod.yaml
+
+# Crear un deployment
+kubectl create deploymetn --image=nginx nginx
+
+# Crear manifiesto de un deployment a partir de kubectl
+kubectl create deploymetn --image=nginx nginx --dry-run=client -o yaml > deployment.yaml
+
+# Crear manifiesto de un deployment con 4 réplicas a partir de kubectl
+kubectl create deployment nginx --image=nginx --replicas=4 --dry-run=client -o yaml > deployment.yaml
+```
+
+
 ### 02.11 - Namespaces
 ### 02.12 - Services
 #### 02.12.1 - Services - ClusterIP
