@@ -775,6 +775,98 @@ kubectl create deployment nginx --image=nginx --replicas=4 --dry-run=client -o y
 
 
 ### 02.11 - Namespaces
+Si varios usuarios y equipos utilizan el mismo clúster de Kubernetes podemos dividir el clúster en subclústeres virtuales utilizando __Namespaces__.
+El nombre de los recursos/objetos creados dentro de un Namespace son únicos, pero no en los Namespaces del cluster.
+
+Para listar todos los Namespaces, podemos ejecutar el siguiente comando:
+```bash
+$ kubectl get namespaces
+
+NAME              STATUS       AGE
+default           Active       11h
+kube-node-lease   Active       11h
+kube-public       Active       11h
+kube-system       Active       11h
+```
+
+Generalmente, Kubernetes crea cuatro Namespaces por defecto:
+
+* kube-system: Contiene los objetos creados por el sistema, principalmente los agentes del plano de control.
+* kube-public: Es un namespace inseguro y legible por cualquiera, utilizado para la exposición de información pública no sensible sobre el cluster.
+* default: Contiene los objetos y recursos creados por los administradores y desarrolladores.
+
+Puede asignar Quota de recursos a cada uno de los Namespaces.
+
+Los recursos en el mismo Namespace, puede referise entre si por sus nombres. Ej: una aplicación (app-a) se conectará con otra (app-b) a través de un Service (b-service).
+```sh
+mysql.connect("b-service")
+```
+
+Es posible conectar aplicaciones de Namespaces distintos.
+```sh
+mysql.connect("<service-name>.<namespace>.svc.cluster.local")
+mysql.connect("b-service.dev.svc.cluster.local")
+```
+
+Objeto namespace en YAML:
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+```
+
+Algunos comandos:
+```bash
+# Listar Pods namespace por defecto
+kubectl get pods
+
+# Listar Pods nampespace específico
+kubectl get pods --namespace kube-system
+
+# Crear Pod a través de un manifiesto en el namespace por defecto
+kubectl create -f pod-definition.yaml
+pod/my-app created!
+
+# Crear Pod a través de un manifiesto en un namespace específico
+kubectl create -f pod-definition.yaml --namespace dev
+pod/my-app created!
+
+# Crear Namespace con kubectl
+kubectl create namespace dev
+namespace/dev created!
+
+# Cambiar namespace por defecto
+kubectl config set-context $(kubectl config current context) --namespace dev
+
+# Listar Pods de todos los namespaces
+kubectl get pods --all-namespaces
+kubectl get pods -A
+```
+
+Para limitar los recursos asignados a su namespace, puede definir otro objeto llamado ResourceQuota:
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-quota
+  namespace: dev
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "4"
+    requests.memory: 5Gi
+    limits.cpu: "10"
+    limits.memory: 10Gi
+```
+
+Creamos el objeto en kubernetes
+```sh
+kubectl create -f compute.quota.yaml
+```
+
+
+
 ### 02.12 - Services
 #### 02.12.1 - Services - ClusterIP
 #### 02.12.2 -Services - LoadBalance
