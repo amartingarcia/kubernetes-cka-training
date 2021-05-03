@@ -157,14 +157,22 @@ En ese caso, tendrá que configurar la declaración y conexión entre los nodos 
 etcd.service
 
 ExecStart=/usr/local/bin/etcd \\
---name ${ETCD_NAME} \\ --cert-file=/etc/etcd/kubernetes.pem \\ --key-file=/etc/etcd/kubernetes-key.pem \\ --peer-cert-file=/etc/etcd/kubernetes.pem \\ --peer-key-file=/etc/etcd/kubernetes-key.pem \\ --trusted-ca-file=/etc/etcd/ca.pem \\ --peer-trusted-ca-file=/etc/etcd/ca.pem \\ --peer-client-cert-auth \\
+--name ${ETCD_NAME} \\ 
+--cert-file=/etc/etcd/kubernetes.pem \\ 
+--key-file=/etc/etcd/kubernetes-key.pem \\ 
+--peer-cert-file=/etc/etcd/kubernetes.pem \\ 
+--peer-key-file=/etc/etcd/kubernetes-key.pem \\ 
+--trusted-ca-file=/etc/etcd/ca.pem \\ 
+--peer-trusted-ca-file=/etc/etcd/ca.pem \\ 
+--peer-client-cert-auth \\
 --client-cert-auth \\
 --initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
 --listen-peer-urls https://${INTERNAL_IP}:2380 \\
 --listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
 --advertise-client-urls https://${INTERNAL_IP}:2379 \\
 --initial-cluster-token etcd-cluster-0 \\
---initial-cluster controller-0=https://${CONTROLLER0_IP}:2380,controller-1=https://${CONTROLLER1_IP}:2380 \\ --initial-cluster-state new \\
+--initial-cluster controller-0=https://${CONTROLLER0_IP}:2380,controller-1=https://${CONTROLLER1_IP}:2380 \\ 
+--initial-cluster-state new \\
 --data-dir=/var/lib/etcd
 ```
 
@@ -247,7 +255,8 @@ spec:
   - --etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key
   - --etcd-servers=https://127.0.0.1:2379
   - --insecure-port=0
-  - --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt - --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key
+  - --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt 
+  - --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key
   - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
   - --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt
   - --proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key
@@ -271,9 +280,11 @@ cat /etc/systemd/system/kube-apiserver.service
 --audit-log-maxsize=100 \\ 
 --audit-log-path=/var/log/audit.log \\ 
 --authorization-mode=Node,RBAC \\ 
---bind-address=0.0.0.0 \\ --client-ca-file=/var/lib/kubernetes/ca.pem \\ 
+--bind-address=0.0.0.0 \\ 
+--client-ca-file=/var/lib/kubernetes/ca.pem \\ 
 --enable-admission-plugins=Initializers,NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,Defa ultStorageClass,ResourceQuota \\
---enable-swagger-ui=true \\ --etcd-cafile=/var/lib/kubernetes/ca.pem \\ 
+--enable-swagger-ui=true \\ 
+--etcd-cafile=/var/lib/kubernetes/ca.pem \\ 
 --etcd-certfile=/var/lib/kubernetes/kubernetes.pem \\ 
 --etcd-keyfile=/var/lib/kubernetes/kubernetes-key.pem \\ 
 --etcd-servers=https://10.240.0.10:2379,https://10.240.0.11:2379,https://10.240.0.12:2379 \\ 
@@ -290,12 +301,398 @@ ps -aux | grep kube-apiserver
 root 2348 3.3 15.4 399040 315604 ? Ssl 15:46 1:22 kube-apiserver --authorization-mode=Node,RBAC -- advertise-address=172.17.0.32 --allow-privileged=true --client-ca-file=/etc/kubernetes/pki/ca.crt --disable- admission-plugins=PersistentVolumeLabel --enable-admission-plugins=NodeRestriction--enable-bootstrap-token- auth=true --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt --etcd-certfile=/etc/kubernetes/pki/apiserver-etcd- client.crt --etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key --etcd-servers=https://127.0.0.1:2379 -- insecure-port=0 --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt --kubelet-client- key=/etc/kubernetes/pki/apiserver-kubelet-client.key --kubelet-preferred-address- types=InternalIP,ExternalIP,Hostname --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt --proxy- client-key-file=/etc/kubernetes/pki/front-proxy-client.key--requestheader-allowed-names=front-proxy-client -- requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt --requestheader-extra-headers-prefix=X-Remote- Extra- --requestheader-group-headers=X-Remote-Group --requestheader-username-headers=X-Remote-User --secure- port=6443 --service-account-key-file=/etc/kubernetes/pki/sa.pub --service-cluster-ip-range=10.96.0.0/12 --tls- cert-file=/etc/kubernetes/pki/apiserver.crt --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
 ```
 
-### 02.4 - Kube Controller Manage
+### 02.4 - Kube Controller Manager
+En terminos de kubernetes, un controlador es un proceso que monitoriza el estado de varios componentes dentro del sistema y trabaja para llevar todo el sistema al estado deseado.
+
+* Node Controller: verifica el estado de los nodos cada 5 segundos. Si deja de recibir datos de un nodo, espera 40 segundos antes de marcarlo como inalcanzable. Después de marcarlo como inalcanzable, espera 5 minutos para ver que reconecte, si no lo hace elimina los Pods asignados a ese nodo, y lo hace en otro sano.
+* Replication Controller: se encarga de monitororizar los ReplicaSets y garantiza que el número deseados.
+
+Hay muchos otros Controllers, y están empaquetados en un solo proceso conocido como Controller Manager.
+
+* Puede encontrarlo como Pod:
+```sh
+ 
+kubectl get pods -n kube-system
+NAMESPACE    NAME                             READY STATUS   RESTARTS AGE
+kube-system  coredns-78fcdf6894-hwrq9         1/1   Running  0        1h
+kube-system  coredns-78fcdf6894-rzhjr         1/1   Running  0        1h
+kube-system  etcd-master                      1/1   Running  0        1h
+kube-system  kube-apiserver-master            1/1   Running  0        1h
+kube-system  kube-controller-manager-master   1/1   Running  0        1h
+kube-system  kube-proxy-lzt6f                 1/1   Running  0        1h
+kube-system  kube-proxy-lz1sf                 1/1   Running  0        1h
+kube-system  kube-scheduler-master            1/1   Running  0        1h
+kube-system  weave-net-12ffc                  1/1   Running  0        1h
+```
+
+* o como servicio:
+```sh
+ 
+cat /etc/kubernetes/manifests/kube-controller-manager.yaml
+spec:
+  containers:
+  - command:
+    - kube-controller-manager
+    - --address=127.0.0.1
+    - --cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt
+    - --cluster-signing-key-file=/etc/kubernetes/pki/ca.key
+    - --controllers=*,bootstrapsigner,tokencleaner
+    - --kubeconfig=/etc/kubernetes/controller-manager.conf
+    - --leader-elect=true
+    - --root-ca-file=/etc/kubernetes/pki/ca.crt
+    - --service-account-private-key-file=/etc/kubernetes/pki/sa.key 
+    - --use-service-account-credentials=true
+```
+
 ### 02.5 - Kube Scheduler
+El Scheduler, es el proceso que indica donde irá cada Pod, no los coloca el mismo, en este caso lo hace Kubelet.
+
+El Scheduler pasa por dos fases para identificar el mejor nodo:
+1. Filtra los nodos que no se ajustan al perfil del Pod. (Por ejemplo, elimina los nodos que no tienen suficientes recursos)
+2. Con los nodos restantes, utiliza una función de prioridad puntuando a los nodos de 0 a 10. Calculando el espacio que quedará disponible en un nodo si el pod se desplegase en el (Más espacio disponible - mejor puntuación).
+> hay más cosas que tener en cuenta como, Limits, Taints y Tolerations, NodeSelectors o Affinity.
+
+* Instalando Scheduler como servicio:
+```sh
+kube-scheduler.service
+
+ExecStart=/usr/local/bin/kube-scheduler \\ 
+--config=/etc/kubernetes/config/kube-scheduler.yaml \\ 
+--v=2
+```
+
+* Opciones de schuduler:
+```bash
+cat /etc/kubernetes/manifests/kube-scheduler.yaml
+
+spec:
+  containers:
+  - command:
+    - kube-scheduler
+    - --address=127.0.0.1
+    - --kubeconfig=/etc/kubernetes/scheduler.conf - --leader-elect=true
+```
+
+
 ### 02.6 - Kubelet
+Kubelet es el agente de Kubernetes en cada nodo. 
+Se encarga de:
+* Registar el nodo en cluster
+* Cuando recibe la orden de crear un contenedor, se lo indica al Container Runtime (Docker, ContainerD, RLT, etc), para que baje la imagen y lo instancie en el nodo.
+* Monitoriza los Pods, y le envía informes al API Server.
+
+Kubelet no se instala automáticamente, el agente se instala en cada nodo como servicio.
+```sh
+kubelet.service
+
+ExecStart=/usr/local/bin/kubelet \\ 
+  --config=/var/lib/kubelet/kubelet-config.yaml \\ 
+  --container-runtime=remote \\ 
+  --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock \\ 
+  --image-pull-progress-deadline=2m \\ 
+  --kubeconfig=/var/lib/kubelet/kubeconfig \\
+  --network-plugin=cni \\
+  --register-node=true \\
+  --v=2
+```
+
+Las opciones de kubelet pueden verse si observamos el proceso:
+```sh
+ps -aux | grep kubelet
+
+root 2095 1.8 2.4 960676 98788 ? Ssl 02:32 0:36 /usr/bin/kubelet --bootstrap- kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf -- config=/var/lib/kubelet/config.yaml --cgroup-driver=cgroupfs --cni-bin-dir=/opt/cni/bin --cni- conf-dir=/etc/cni/net.d --network-plugin=cni
+```
+
+
 ### 02.7 - Kube-proxy
+Dentro de un cluster de Kubernetes, cada Pod puede llegar a cualquier otro Pod.
+
+Esto se logra mediante la implementación de una red entre los Pods. 
+Una red virtual que se extiende por todo el cluster, a la que se conectan todos los Pods, cuando se crea un Service, kube-proxy lo escanea y crea las reglas necesarias, una forma de hacerlo es con Iptables. Kube-proxy se implementa como DaemonSet (Pod por nodo).
+
 ### 02.8 - Pods
-### 02.9- ReplicaSet
+Un Pod un conjunto de propiedades definidas en un fichero YAML, este fichero contiene la definición del objeto y agrupa uno o varios contenedores.
+
+Un Pod, es la unidad más pequeña en Kubernetes.
+
+```yaml
+apiVersion: v1              #Versión de la API de Kubernetes que estás usando para crear el objeto (String). Es una propiedad obligatoria. Ej: apps/v1, v1, ...
+kind: Pod                   #Tipo de objeto que tratamos de crear (String). Es una propiedad obligatoria. Ej: ReplicaSet, Deployment, Service, ...
+metadata:                   #Permite indicar datos sobre el objecto (diccionario), como el nombre, namespace, labels, etc. Es una propiedad obligatoria.
+  name: myapp-pod
+  labels:                   #Permite identificar un objeto y relacionarlo con otros, por ejemplo un Service, podría apuntar a este pod a través de sus Labels.
+    app: myapp
+    type: front-end
+spec:                       #Bajo esta propiedad se indican configuracaciones específicas para este Pod. Es una propiedad obligatoria
+  containers:               #Propiedad que define los contenedores que se declaran en este Pod (List), dado que puede haber uno o más.
+    - name: nginx-container
+      image: nginx
+```
+
+Definimos algunos comando importantes relativos a los Pods.
+* Crear a partir de la definición en un fichero
+```bash
+kubectl create -f pod.yaml
+
+pod/myapp-pod created!
+```
+
+* Obtener todos los Pods de un namespace:
+```bash
+kubectl -n kube-system get pod
+
+NAME                               READY   STATUS    RESTARTS   AGE
+coredns-74ff55c5b-twd8d            1/1     Running   0          20s
+etcd-minikube                      1/1     Running   0          31s
+kube-apiserver-minikube            1/1     Running   0          31s
+kube-controller-manager-minikube   1/1     Running   0          31s
+kube-proxy-h29mh                   1/1     Running   0          20s
+kube-scheduler-minikube            1/1     Running   0          31s
+storage-provisioner                1/1     Running   0          33s
+```
+
+* Obtener información de los Pods:
+```sh
+kubectl -n kube-system get pod -o wide
+
+NAME                               READY   STATUS    RESTARTS   AGE   IP             NODE       NOMINATED NODE   READINESS GATES
+coredns-74ff55c5b-twd8d            1/1     Running   0          13m   172.17.0.2     node01     <none>           <none>
+etcd-minikube                      1/1     Running   0          13m   192.168.49.2   node01     <none>           <none>
+kube-apiserver-minikube            1/1     Running   0          13m   192.168.49.2   node01     <none>           <none>
+kube-controller-manager-minikube   1/1     Running   0          13m   192.168.49.2   node01     <none>           <none>
+kube-proxy-h29mh                   1/1     Running   0          13m   192.168.49.2   node01     <none>           <none>
+kube-scheduler-minikube            1/1     Running   0          13m   192.168.49.2   node01     <none>           <none>
+storage-provisioner                1/1     Running   1          13m   192.168.49.2   node01     <none>           <none>
+```
+
+
+* Obtener información sobre un Pod existente en el cluster (Etiquetas, variables, Contanedores, IP, volumenes, puntos de montaje, etc)
+```bash
+kubectl -n kube-system describe pod kube-proxy-h29mh
+
+Name:                 kube-proxy-h29mh
+Namespace:            kube-system
+Priority:             2000001000
+Priority Class Name:  system-node-critical
+Node:                 minikube/192.168.49.2
+Start Time:           Mon, 03 May 2021 15:39:13 +0200
+Labels:               controller-revision-hash=b89db7f56
+                      k8s-app=kube-proxy
+                      pod-template-generation=1
+Annotations:          <none>
+Status:               Running
+IP:                   192.168.49.2
+IPs:
+  IP:           192.168.49.2
+Controlled By:  DaemonSet/kube-proxy
+Containers:
+  kube-proxy:
+    Container ID:  docker://86b1f246816bd3fc3354df5e7d6ffcace8ba9826f240c3936e3cb2ccbf0c6445
+    Image:         k8s.gcr.io/kube-proxy:v1.20.2
+    Image ID:      docker-pullable://k8s.gcr.io/kube-proxy@sha256:326fe8a4508a5db91cf234c4867eff5ba458bc4107c2a7e15c827a74faa19be9
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /usr/local/bin/kube-proxy
+      --config=/var/lib/kube-proxy/config.conf
+      --hostname-override=$(NODE_NAME)
+    State:          Running
+      Started:      Mon, 03 May 2021 15:39:14 +0200
+    Ready:          True
+    Restart Count:  0
+    Environment:
+      NODE_NAME:   (v1:spec.nodeName)
+    Mounts:
+      /lib/modules from lib-modules (ro)
+      /run/xtables.lock from xtables-lock (rw)
+      /var/lib/kube-proxy from kube-proxy (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-proxy-token-kntxm (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-proxy:
+    Type:      ConfigMap (a volume populated by a ConfigMap)
+    Name:      kube-proxy
+    Optional:  false
+  xtables-lock:
+    Type:          HostPath (bare host directory volume)
+    Path:          /run/xtables.lock
+    HostPathType:  FileOrCreate
+  lib-modules:
+    Type:          HostPath (bare host directory volume)
+    Path:          /lib/modules
+    HostPathType:
+  kube-proxy-token-kntxm:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  kube-proxy-token-kntxm
+    Optional:    false
+QoS Class:       BestEffort
+Node-Selectors:  kubernetes.io/os=linux
+Tolerations:     op=Exists
+                 CriticalAddonsOnly op=Exists
+                 node.kubernetes.io/disk-pressure:NoSchedule op=Exists
+                 node.kubernetes.io/memory-pressure:NoSchedule op=Exists
+                 node.kubernetes.io/network-unavailable:NoSchedule op=Exists
+                 node.kubernetes.io/not-ready:NoExecute op=Exists
+                 node.kubernetes.io/pid-pressure:NoSchedule op=Exists
+                 node.kubernetes.io/unreachable:NoExecute op=Exists
+                 node.kubernetes.io/unschedulable:NoSchedule op=Exists
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  2m    default-scheduler  Successfully assigned kube-system/kube-proxy-h29mh to minikube
+  Normal  Pulled     119s  kubelet            Container image "k8s.gcr.io/kube-proxy:v1.20.2" already present on machine
+  Normal  Created    119s  kubelet            Created container kube-proxy
+  Normal  Started    119s  kubelet            Started container kube-proxy
+```
+
+* Crear Pods en linea de comandos:
+```sh
+kubectl run nginx --imagen=nginx
+```
+
+* Crear un manifiesto de un pod a través de kubectl
+```yaml
+kubectl run redis --image=redis --dry-run=client -o yaml > pod.yaml
+
+# Mostramos el fichero generado
+cat pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: redis
+  name: redis
+spec:
+  containers:
+  - image: redis
+    name: redis
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+```
+
+### 02.9 - ReplicaSet
+El objeto ReplicaSet, garantiza que el número de replicas indicadas en el objeto, esté siempre disponibles. Permite escalar y balancear si fuera necesarios, creando más replicas en el mismo nodo, incluso en otros, de tal forma que para el usuario es transparente.
+
+En Clusters con versiones más antiguas, podemos encontranos __Replication Controller__, y en cluster con versiones más modernas, __ReplicaSet__.
+
+* Replication Controller:
+```yaml
+apiVersion: v1
+kind: ReplicationController
+metadata:             # Metadata para el ReplicationController.
+  name: myapp-rc
+  labels:
+    app: myapp
+    type: front-end
+spec:                  # Especificaciones para el ReplicacionController.
+  template:            # Definimos una plantilla para las réplicas que controlará este objeto. Que contendrá las mismas propiedades que un Pod.
+    metadata:          # Metadata para el Pod.
+      name: myapp-pod
+      labels:
+        app: myapp
+        type: front-end
+    spec:             # Especificaciones para el Pod.
+      containers:
+      - name: nginx-container
+        image: nginx
+  replicas: 3         # Número de réplicas del Pod.
+```
+
+* Creamos el Replication Controller definido:
+```bash
+kubectl create -f rc-definition.yaml
+replicationconrtoller "myapp-rc" created!
+
+# Listamos los Replication Controllers
+kubectl get replicationcontrollers
+NAME       DESIRED   CURRENT   READY   AGE
+myapp-rc   3         3         3       72s
+
+# Listamos los pods
+kubectl get pod
+NAME             READY   STATUS    RESTARTS   AGE
+myapp-rc-gr4hm   1/1     Running   0          33s
+myapp-rc-kwm72   1/1     Running   0          33s
+myapp-rc-szjkd   1/1     Running   0          33s
+```
+
+* Replica Set:
+```yaml
+apiVersion: apps/v1   # apiVersion cambia con respecto a los RCs
+kind: ReplicationSet
+metadata:             # Metadata para el ReplicaSet.
+  name: myapp-replicaset
+  labels:
+    app: myapp
+    type: front-end
+spec:                  # Especificaciones para el ReplicaSet.
+  template:            # Definimos una plantilla para las réplicas que controlará este objeto. Que contendrá las mismas propiedades que un Pod.
+    metadata:          # Metadata para el Pod.
+      name: myapp-pod
+      labels:
+        app: myapp
+        type: front-end
+    spec:             # Especificaciones para el Pod.
+      containers:
+      - name: nginx-container
+        image: nginx
+  replicas: 3         # Número de réplicas del Pod.
+  selector:           # Esta propiedad es la diferencia entre RS y RC, prmite identificar que partes se encuentran bajo el 
+    matchLabels:
+    type: front-end
+```
+
+* Creamos el ReplicationSet definido:
+```bash
+kubectl create -f rc-definition.yaml
+replicationconrtoller "myapp-replicaset" created!
+
+# Listamos los Replication Controllers
+kubectl get replicaset
+NAME       DESIRED   CURRENT   READY   AGE
+myapp-replicaset   3         3         3       72s
+
+# Listamos los pods
+kubectl get pod
+NAME                     READY   STATUS    RESTARTS   AGE
+myapp-replicaset-gr4hm   1/1     Running   0          33s
+myapp-replicaset-kwm72   1/1     Running   0          33s
+myapp-replicaset-szjkd   1/1     Running   0          33s
+```
+
+>Los Labels, permiten identificar los objetos de kubernetes, a través de estas etiquetas proporcionamos un filtro para los ReplicaSets.
+
+
+Podemos escalar las réplicas de distintas formas:
+```bash
+# Editar el manifiesto replicaset-definition.yaml
+vim replicaset-definition.yaml # set a new value
+kubectl replace -f replicaset-definition.yaml
+
+# Editar el Replicaset and change replica property
+kubectl edit myapp-replicaset
+
+# Seteando nuevo valor con kubectl
+kubectl scale --replicas=6 -f replicast-definition.yaml
+kubectl scale --replicas=6 replicaset myapp-replicaset
+
+
+....
+
+# 
+```
+
+
+
 ### 02.10 - Deployments
 ### 02.11 - Namespaces
 ### 02.12 - Services
