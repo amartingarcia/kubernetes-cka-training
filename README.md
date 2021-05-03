@@ -669,7 +669,8 @@ myapp-replicaset-kwm72   1/1     Running   0          33s
 myapp-replicaset-szjkd   1/1     Running   0          33s
 ```
 
->Los Labels, permiten identificar los objetos de kubernetes, a través de estas etiquetas proporcionamos un filtro para los ReplicaSets.
+
+> Los Labels, permiten identificar los objetos de kubernetes, a través de estas etiquetas proporcionamos un filtro para los ReplicaSets.
 
 
 Podemos escalar las réplicas de distintas formas:
@@ -684,11 +685,7 @@ kubectl edit myapp-replicaset
 # Seteando nuevo valor con kubectl
 kubectl scale --replicas=6 -f replicast-definition.yaml
 kubectl scale --replicas=6 replicaset myapp-replicaset
-
-
-....
-
-# 
+ 
 ```
 
 
