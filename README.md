@@ -697,7 +697,8 @@ IMAGEN DEPLOYMENT
 Un ejemplo de manifiesto de Deployment:
 ```yaml
 apiVersion: apps/v1
-kind: Deployment        # Con respecto a los RS, cambia la propiedad Kind
+# Con respecto a los RS, cambia la propiedad Kind
+kind: Deployment        
 metadata:
   name: myapp-deployment
   labels:
@@ -868,15 +869,39 @@ kubectl create -f compute.quota.yaml
 
 
 ### 02.12 - Services
-Los Services son objectos de Kubernetes que permiten la comunicación dentro y fuera del cluster. Existen varios tipos:
-* NodePort
-Permite indicar un puerto alto en todos los nodos del cluster
+Los Services son objectos de Kubernetes que permiten la comunicación dentro y fuera del cluster.
+
+#### 02.12.1 - NodePort
+Los Service de tipo NodePort, permiten dedicar un puerto alto (30000-32767) en todos los nodos del cluster. Se accedería a la aplicación 
+```bash
+http://node-ip:30008
+```
+
 ![service_nodeport](img/02_service_noderport.png)
 
-* ClusterIP
-* LoadBalancer
-#### 02.12.1 - Services - ClusterIP
-#### 02.12.2 - Services - LoadBalancer
+* Ejemplo de manifiesto YAML:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  # Tipo de objeto, podría ser ClusterIP, LoadBalancer o NodePort
+  type: NodePort
+  selector:
+    # Se declaran las mismas labels que contiene el Pod, para que el Service, apunte a la aplicación o aplicaciones correctas.
+    app: myapp
+    type: front-end
+  # Puede tener uno o más puertos
+  ports:
+      # Si no se indica targePort, por defecto tendrá el mismo que el valor de Port
+    - port: 80
+      targetPort: 80
+      # Si no se indica, el Control Plan de Kubernetes asignará un puerto alto del rango (default: 30000-32767)
+      nodePort: 30007
+```
+#### 02.12.2 - Services - ClusterIP
+#### 02.12.3 - Services - LoadBalancer
 ### 02.13 - Imperativo Vs Declarativo
 ### 02.13 - kubectl apply (Comandos)
 
