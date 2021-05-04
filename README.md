@@ -871,7 +871,7 @@ kubectl create -f compute.quota.yaml
 Los Services son objectos de Kubernetes que permiten la comunicación dentro y fuera del cluster. Existen varios tipos:
 * NodePort
 Permite indicar un puerto alto en todos los nodos del cluster
-![service_nodeport](../img/02_service_noderport.png)
+![service_nodeport](img/02_service_noderport.png)
 
 * ClusterIP
 * LoadBalancer
