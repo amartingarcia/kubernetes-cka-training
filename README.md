@@ -1075,7 +1075,148 @@ kubeclt create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml
 
 ## 03 - Scheduling
 ### 03.1 - Manual Scheduling
+En el manifiesto de Pods, hay una propiedad que normalmente no se especifica ,__nodeName__, si no se indica, Kubernetes lo agrega automáticamente si existe un Scheduler.
+
+El Scheduler es el encargado de revisar los Pods buscando los que no tienen esta propiedad, estos serán programados, el Scheduler identitifica el nodo correcto, y añade esta propiedad.
+`nodeName: node02`
+
+Cuando no hay un Scheduler en el cluster, el estado de los Pods creados resultará _Pending_.
+```bash
+kubectl get pods
+
+NAME           READY   STATUS       RESTARTS    AGE
+nginx          0/1     Pending      0           3S
+```
+
+Puedes indicar manualmente esta propiedad en tu manifiesto, de esta forma provisionarás el Pod en el nodo indicado:
+* Manifiesto:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+  nodeName: node02
+```
+
+```bash
+kubectl get pods
+
+NAME           READY   STATUS       RESTARTS    AGE   IP          NODE
+nginx          1/1     Pending      0           3S    10.40.0.4   node02
+```
+
+Cuando asignas la propiedad manualmente, no permite su modificación.  
+
 ### 03.2 - Labels and Selectors
+Las Labels son muy útiles para filtrar y ver diferentes objetos por diferentes categorías, como agrupar por su tipo o ver objetos por aplicación o por funcionalidad.
+
+Puede agrupar objetos usando __Labels__ según el tipo de objeto, necesidad, función, etc.
+En el manifiesto de su objeto, en la sección de _Metadata_, indique tantas _Labels_  como necesite con un formato _key-value_. 
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+  labels:
+    app: App1
+    function: Front-end
+spec:
+  containers:
+  - name: simple-webapp
+    image: nginx
+    ports:
+      - containerPort: 8080
+```
+
+Puede seleccionar objetos usando __Selectors__, para filtrar objetos específicos.
+```bash
+kubectl get pod --selector app=App1
+
+NAME            READY   STATUS    RESTARTS   AGE
+simple-webapp   1/1     Running   0          11s
+```
+
+Los objetos de Kubernetes utilizan Labels y Selectors internamente para conectar diferentes objetos entre si.
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-webapp
+  # Labels definidas para el Deployment
+  labels:
+    app: App1
+    function: Front-end
+spec:
+  replicas: 3
+  # Sección que une el Deployment con los Pods que controlará. Añadir las mismas Labels que contiene el Pod.
+  selector:
+    matchLabels:
+      app: App1
+      function: Front-end
+  template:
+    metadata:
+      # Labels definidas para los Pods.
+      labels:
+        app: App1
+        function: Front-end
+    spec:
+      containers:
+      - name: simple-webapp
+        image: nginx
+        ports:
+        - containerPort: 80
+```
+
+Funciona igual con otros objetos:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  # Sección que une el Service con los Pods.
+  selector:
+    app: App1
+    function: Front-end
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9376
+```
+
+Mientras que las Labels y Selectors, se usan para agrupar y seleccionar, las __Annotations__ se usan para indicar cualquier dato, como detalles de herramientas, nombres, contactos, números de telefono, correos electrónicos, etc, que pueden usarse para algún tipo de propósito de integración.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-webapp
+  labels:
+    app: App1
+  # Annotations, permiten indicar datos, incluso la integración con terceros
+  ## https://github.com/stakater/Reloader
+  annotations:
+    secret.reloader.stakater.com/reload: "foo-secret,bar-secret,baz-secret"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: App1
+  template:
+    metadata:
+      labels:
+        app: App1
+    spec:
+      containers:
+      - name: simple-webapp
+        image: nginx
+```
+
 ### 03.3 - Taints and Tolerations
 ### 03.4 - Node Selectors
 ### 03.5 - Node Affinity
