@@ -872,7 +872,10 @@ kubectl create -f compute.quota.yaml
 Los Services son objectos de Kubernetes que permiten la comunicación dentro y fuera del cluster.
 
 #### 02.12.1 - NodePort
-Los Service de tipo NodePort, permiten dedicar un puerto alto (30000-32767) en todos los nodos del cluster. Se accedería a la aplicación 
+Los Service de tipo NodePort, permiten dedicar un puerto alto (30000-32767) en todos los nodos del cluster. 
+El propio cluster detectará todos los Pods con las etiquetas indicadas y balancerá la carga entre todos ellos.
+
+Se accedería a la aplicación 
 ```bash
 http://node-ip:30008
 ```
@@ -900,9 +903,175 @@ spec:
       # Si no se indica, el Control Plan de Kubernetes asignará un puerto alto del rango (default: 30000-32767)
       nodePort: 30007
 ```
+
+Comprobamos que el SVC ha sido creado y realizamos una petición curl a todos los nodos con el mismo puerto proporcionado por el SVC:
+```bash
+kubectl get svc
+
+NAME           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+kubernetes     ClusterIP   10.96.0.1       <none>        443/TCP   14s
+myapp-service  NodePort    10.106.127.123  <none>        80:30007  4s
+
+
+# Realizamos una petición a las IPs y puertos de los nodos
+curl http://192.168.1.2:30007
+Hello World!
+
+curl http://192.168.1.3:30007
+Hello World!
+
+curl http://192.168.1.4:30007
+Hello World!
+```
+
+
 #### 02.12.2 - Services - ClusterIP
+Pueden encontrarse distintos componentes, en una aplicación. Por ejemplo: Front-end, back-end y redis. Todos ellos son Pods de nuestro cluster y necesitarán tener conectividad.
+
+Todos los Pods de nuestro cluster, tiene IP, pero, ¿que necesitariamos para conectar los Pods?
+![dns_pod](../img/02_cluster_ip.png)
+
+Necesitaremos un Service de tipo ClusterIP, permite la comunicación entre distintas capas. Cada capa puedes escalar sin afectar a la comunicación.
+Estos servicios definene una IP dentro del cluster, a través del nombre proporcionado para el Service, se establece la comunicación.
+
+* Ejemplo de definición de Service ClusterIP:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: back-end
+spec:
+  type: ClusterIP
+  selector:
+    app: myapp
+    type: back-end
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+```
+
+* Creación del SVC:
+```bash
+kubectl get svc
+
+NAME           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+kubernetes     ClusterIP   10.96.0.1       <none>        443/TCP   14s
+back-end       ClusterIP   10.106.127.123  <none>        80/TCP    4s
+```
+
 #### 02.12.3 - Services - LoadBalancer
+Como hemos visto, si los usuarios quisieran acceder a una aplicación del cluster, podriamos utilizar un Service de tipo NodePort, les facilitariamos las IPs de los nodos y el puerto asignado, pero, ¿que ocurre si los nodos no son accesibles? ¿y si hay multitud de puertos para los mismos nodos?
+Podriamos crear una máquina virtual con el propósito de equilibrar la carga entre todos los nodos con nginx, y enrutar hacia los nodos del cluster, pero esto puede ser una tarea tediosa.
+
+Sin embargo, si estuvieramos en una plataforma Cloud, podriamos aprovechar los Load Balancer que nos proporcionan. 
+Kubernetes, tiene soporte para integrase con los balanceadores de carga de estas plataformas, y configurarlo para nosotros.
+
+* Definición de SVC LoadBalancer:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  selector:
+    app: myapp
+    type: front-end
+  ports:
+    - nodePort: 80
+      port: 80
+      targetPort: 30007
+  type: LoadBalancer
+```
+
+
 ### 02.13 - Imperativo Vs Declarativo
+Los comandos imperativos realizan una tarea concreta, como por ejemplo crear o borrar un objecto en Kubernetes.
+Los comandos declarativos son más inteligentes, permiten crear un objeto si no existe o actualizarlo si existe.
+
+Los comandos imperativos, de cara al examen, le ayudan a realizar una tarea con mayor rapidez.
+Algunos comandos:
+
+* Imperativos:
+```bash
+# Crear un objeto a partir de un fichero
+kubectl create -f nginx.yaml
+
+# Edita un fichero alojado en memoria
+kubectl edit deployment nginx
+
+# Reemplaza un objeto a partir de un fichero
+kubectl replace -f nginx.yaml
+
+# Recrear objetos
+kubectl replace --force -f nginx.yaml
+
+# No permite crear un objeto que ya existe
+kubectl create -f nginx.yaml
+`Error from Server (AlreadyExists): error when creating "nginx.yaml": pods "myapp-pod" already exists`
+
+# No permite reemplazar si el objeto no existe
+kubectl replace -f nginx.yaml
+`Error from Server (Conflict): error when replacing "nginx.yaml": Operation cannot be fulfilled on pods "myapp-pod"`
+```
+
+* Declarativos
+```bash
+# Crear un objeto si no existe
+kubectl apply -f nginx.yaml
+
+# Crear todos los objetos de un path
+kubectl apply -f .
+
+# Actualizar un objeto si existe
+kubectl apply -f nginx.yaml
+```
+
+* Tips
+
+```bash
+# Mostar configuración de kubeconfig
+kubectl config view
+
+# Mostrar los contextos
+kubectl config get-contexts
+
+# Crear o actualizar objetos a partir de un fichero
+kubectl apply -f file.yaml
+
+# Crear un Pod
+kubectl run nginx --image=nginx
+
+# Crear un Deployment
+kubectl create deployment nginx --image=nginx --replicas=4
+
+# Exponer un Deployment
+kubectl expose deployment nginx --port 80
+
+# Editar un Deployment
+kubectl edit deployment nginx
+
+# Escalar un Deployment
+kubectl scale deployment nginx --replicas=5
+
+# Setear imagen en un Deployment
+kubectl set image deployment nginx=nginx:1.18
+
+# Crear un Job
+kubectl create job hello --image=busybox -- echo "Hello World"
+
+# Crear pod con shell interactiva
+kubectl run -ti busybox --image=busybox -- sh
+
+# Crear manifiesto para Pod
+kubectl run nginx --image=nginx --dry-run=client -o yaml > pod.yaml
+
+# Crear manifiesto para SVC
+kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml
+kubeclt create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml
+```
+
+
 ### 02.13 - kubectl apply (Comandos)
 
 
