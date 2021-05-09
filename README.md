@@ -1072,9 +1072,6 @@ kubeclt create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml
 ```
 
 
-### 02.13 - kubectl apply (Comandos)
-
-
 
 ## 03 - Scheduling
 ### 03.1 - Manual Scheduling
