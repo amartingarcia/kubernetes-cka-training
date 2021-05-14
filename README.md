@@ -1218,13 +1218,221 @@ spec:
 ```
 
 ### 03.3 - Taints and Tolerations
+Por defecto, no existen restricciones ni limitaciones en los Nodes, por lo tanto cualquier Pod puede ser ubicado en cualquier Node.
+
+Para evitar que un Node, contenga Pods que no son deseados, se marca con la propiedad __Taint__, y para que ciertos recursos caigan sobre esos nodos, necesitan una propiedad __Tolerations__.
+
+```bash
+# Taints - Node
+kubectl taint nodes node-name key=value:taint-effect
+```
+
+Existen distintos efectos sobre los Taints:
+* __NoSchedule__: El sistema no provisionará ningún Pod sin Tolerations, en el Nodo.
+* __PreferNoSchedule__: El sistema intentará evitar colocar un Pod en ese nodo, pero no lo garantiza.
+* __NoExecute__: Los nuevos Pods provisionados en el cluster no se añadirán a este nodo, y si ya existen, drenará los Pods si no tienen el Toleration correcto.
+
+```bash
+# Taint con NoSchedule
+kubectl taint nodes node1 app=blue:NoSchedule
+```
+
+```yaml
+# Pod con Toleration
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    imagePullPolicy: IfNotPresent
+  tolerations:
+  - key: "app"
+    operator: "Equal"
+    value: "blue"
+    effect: "NoSchedule"
+```
+
+Los Nodos Masters, también tienen capacidad para tener Pods, sin embargo no se recomienda programar Pods en el. Estos, tambíen tienen la propiedad __Taint__.
+```bash
+kubectl describe node master01 | grep Taint
+
+Taints:         node-role.kubernetes.io/master:NoSchedule
+```
+
+
 ### 03.4 - Node Selectors
+Podemos indicar en los Pods, el Nodo en el que tienen que programarse. NodeSelector, es la propiedad que permite esto, es la unión entre un Pod y un Nodo.
+
+Debe tener un Label en el Nodo
+
+```bash
+kubectl label nodes node01 size=Large
+```
+
+```yaml
+# Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    env: test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    imagePullPolicy: IfNotPresent
+  nodeSelector:
+    size: Large
+```
+
 ### 03.5 - Node Affinity
-### 03.6 - Taints and Tolerations Vs Node Affinity 
-### 03.7 - Limites y Requerimientos de recursos
-### 03.8 - DaemonSets
-### 03.9 - Static Pods
-### 03.10 - Multiple Scheduler
+Si quisieramos indicar al Scheduler que un Pod debe ser provisionado en un nodo con LAbel size=Large o size=Medium, necesitariamos utilizar otra propiedad, __nodeAffinity__.
+
+```yaml
+# Pod con affinity In
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    env: test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    imagePullPolicy: IfNotPresent
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: In # In, NotIn
+            values:
+            - Large
+            - Medium
+
+# Pod con Affinity NotIn
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    env: test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    imagePullPolicy: IfNotPresent
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: NotIn
+            values:
+            - Small
+
+# Solo comprobar que existe una key
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    env: test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    imagePullPolicy: IfNotPresent
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: Exists
+```
+
+Existen tipos de Node Affinity:
+* __requiredDuringSchedulingIgnoredDuringExecution__: No se provisionará cuando se crea, pero será ignorado si ya se encuentra provisinado.
+* __preferredDuringSchedulingIgnoredDuringExecution__: Evitará provisionarse si se crea, y será ignorado si ya se encuentra provisinado.
+* __requiredDuringSchedulingRequiredDuringExecution__: No se provisionará cuando se crea, si ya existe será drenado a otro nodo.
+
+> _DuringScheduling_: estado donde no existe un Pod y se crea por primera vez.
+> _DuringExecution_: estado donde ya existe un Pod programado.
+
+
+### 03.6 - Resource Requirements and Limits
+Cada Nodo tiene un conjunto de recursos de CPU, Memoria y Disco. Cada Pod consume un conjunto de recursos.
+
+El Scheduler trata de programar el Pod en el Nodo con menos carga para balancear el uso de los nodos, pero además, también evalua el tamaño de los recursos del Pod, evitando los nodos que no pueden alojar el Pod por recursos insuficientes.
+
+Cuando un Pod no pueda ser alojado por motivos de recursos, podrá ver el siguiente log en el Pod:
+```bash
+Events:
+  Reason                    Message
+  ------                    -------
+  FailedScheduling No nodes are available: Insufficient cpu (3).
+```
+
+Por defecto, Kubernetes supone que un Pod requiere __0.5CPU y 256Mi__. Pero se pueden indicar otros valores:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    env: test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: 1
+```
+
+Los recursos de un Pod se pueden establecer:
+* CPU: 1m (valor mínimo), 100m, 0.1, 1, etc
+* Memory: 1Mi(1,048,576 bytes), 1M(1,000,000 bytes), 1G, 1Gi, 
+
+También puede establecer un límite de recursos para el Pod
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    env: test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: 1
+      limits:
+        memory: "2Gi"
+        cpu: 2
+```
+
+Si no define límites en sus Pods, podrán utilizar si en algún momento lo requieren, toda la CPU o Memoria del nodo, sin embargo, puede limitar el uso a través de los Limits.
+
+Para la CPU, el nodo limitará al Pod, sin embargo para el consumo de memoria, si el Pod excede del límite, el Pod será eliminado.
+
+
+### 03.7 - DaemonSets
+### 03.8 - Static Pods
+### 03.9 - Multiple Scheduler
 
 
 ## 04 - Logging and Monitoring
