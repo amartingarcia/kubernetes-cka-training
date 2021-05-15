@@ -845,7 +845,7 @@ kubectl get pods --all-namespaces
 kubectl get pods -A
 ```
 
-Para limitar los recursos asignados a su namespace, puede definir otro objeto llamado ResourceQuota:
+Para limitar los recursos asignados a su namespace, puede definir otro objeto llamado __ResourceQuota__:
 ```yaml
 apiVersion: v1
 kind: ResourceQuota
@@ -854,11 +854,11 @@ metadata:
   namespace: dev
 spec:
   hard:
-    pods: "10"
-    requests.cpu: "4"
-    requests.memory: 5Gi
-    limits.cpu: "10"
-    limits.memory: 10Gi
+    pods: "10"            # 10 Pods como máximo en el namespace 
+    requests.cpu: "4"     # Request CPU. La suma de las request de todos los Pods del namespace, no puede exceder de 4.
+    requests.memory: 5Gi  # Request Memory. La suma de las request de todos los Pods del namespace, no puede exceder de 5Gi
+    limits.cpu: "10"      # Limits CPU. La suma de las limits de todos los Pods del namespace, no puede exceder de 10
+    limits.memory: 10Gi   # Limits Memory. La suma de las limits de todos los Pods del namespace, no puede exceder de 10Gi
 ```
 
 Creamos el objeto en kubernetes
@@ -1429,9 +1429,134 @@ Si no define límites en sus Pods, podrán utilizar si en algún momento lo requ
 
 Para la CPU, el nodo limitará al Pod, sin embargo para el consumo de memoria, si el Pod excede del límite, el Pod será eliminado.
 
+Puede establecer el límite por defecto para un Pod, creando objetos __LimitRange__.
+
+```yaml
+# Default Memory
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-mem-limits
+spec:
+  limits:
+  - default:
+      memory: 512Mi
+    defaultRequest:
+      memory: 256Mi
+    type: Container
+
+# Default CPU
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-cpu-limits
+spec:
+  limits:
+  - default:
+      cpu: 1
+    defaultRequest:
+      cpu: 0.5
+    type: Container
+```
+
+Además, podemos limitar la asignación de recursos en un Namespace.
+
+```yaml
+# Min Max Memory
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mem-min-max
+spec:
+  limits:
+  - max:
+      memory: 500Mi
+    min:
+      memory: 128Mi
+    type: Container
+
+# Min Max CPU
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cpu-min-max
+spec:
+  limits:
+  - max:
+      cpu: "500m"
+    min:
+      cpu: "100m"
+    type: Container
+```
 
 ### 03.7 - DaemonSets
+Un __DaemonSets__ es un objeto de Kubernetes, que a su vez, contiene un ReplicaSet. Permite programar una réplica del Pod gestionado en cada Nodo del cluster, además de asegurar de añadir nuevas réplicas en los nuevos nodos que se añadan al cluster.
+
+Kube-proxy o Calico, son ejemplos de DaemonSet, se programan en cada nodo.
+
+```yaml
+# Ejemplo con algunas de las propiedades descritas
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: monitoring-daemon
+  namespace: kube-system
+  labels:
+    k8s-app: monitoring
+spec:
+  selector:
+    matchLabels:
+      name: monitoring-agent
+  template:
+    metadata:
+      labels:
+        name: monitoring-agent
+    spec:
+      containers:
+      - name: fluentd
+        image: gcr.io/fluentd-elasticsearch/fluentd:v2.5.1
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+```
+
+Para garantizar que cada nodo contiene las réplicas del DaemonSet, se le añade la propiedad __NodeName__.
+
+
 ### 03.8 - Static Pods
+Si no hubiese Control Planne, un nodo podría funcionar por si mismo a través de Kubelet. Sabemos que la única misión de kubelet, es crear Pods, pero en este caso no tenemos API Server para comunicarle la creación de Pods. Podemos configurar kubelet para leer los ficheros de una ruta en el nodo __/etc/kubernetes/manifest/__, kubelet revisará periódicamente este diretorio y creará los Pods (solo puede crear Pods) que alli se encuentren definidos, también se ocupará de que se mantenga vivos.
+
+```bash
+[Service]
+ExecStart=/usr/local/bin/kubelet \\
+  --container-runtime=remote \\
+  --container-runtime-endpoint=unix://var/run/containerd/containerd.sock \\
+  # Con esta propiedad se define donde se encuentran los Statics Pods
+  --pod-manifest-path=/etc/kubernetes/manifest \\
+  --kubeconfig=/var/lib/kubelet/kubeconfig \\
+  --network-plugin=cni \\
+  --register-node=true \\
+  --v=2
+```
+
+También puede indicarse en el fichero kubeconfig
+```bash
+cat /var/lib/kubelet/kubeconfig
+
+...
+staticPodPath: /etc/kubernetes/manifest
+...
+
+```
+
+Una vez creados, podriamos visualizar nuestros Statics Pods a través de Docker, recordemos que no tenemos un API Server.
+
+Si tuvieramos un API Server, podriamos ver los Statics Pods creados pero no podriamos editarlos a través de kubectl.
+
+
 ### 03.9 - Multiple Scheduler
 
 
