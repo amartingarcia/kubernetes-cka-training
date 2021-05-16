@@ -1558,6 +1558,98 @@ Si tuvieramos un API Server, podriamos ver los Statics Pods creados pero no podr
 
 
 ### 03.9 - Multiple Scheduler
+Un caso de uso para tener múltiples Schedulers, es que el algoritmo y comprobraciones que hace el actual Scheduler no satisfacen sus necesidades.
+
+```bash
+# kube-scheduler.service
+ExecStart=/usr/local/bin/kube-scheduler \\
+  --config=/etc/kubernetes/config/kube-scheduler.yaml \\
+  --scheduler-name= default-scheduler
+
+# my-custom-scheduler.service
+ExecStart=/usr/local/bin/kube-scheduler \\
+  --config=/etc/kubernetes/config/kube-scheduler.yaml \\
+  --scheduler-name= default-scheduler
+```
+
+Podemos copiar el Pod del actual Scheduler y añadirle algunos parámetros más:
+```yaml
+# /etc/kubernetes/manifest/kube-scheduler.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-scheduler
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+      - kube-scheduler
+      - --address=127.0.0.1
+      - --kubeconfig=/etc/kubernetes/scheduler.conf
+      - --leader-elect=true
+    image: k8s.gcr.io/kube-scheduler-amd64:v1.11.3
+    name: kube-scheduler
+
+# my-custom-scheduler.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-custom-scheduler
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+      - kube-scheduler
+      - --address=127.0.0.1
+      - --kubeconfig=/etc/kubernetes/scheduler.conf
+      - --leader-elect=true
+      - --scheduler-name=my-custom-scheduler
+      - --lock-object-name=my-custom-scheduler
+    image: k8s.gcr.io/kube-scheduler-amd64:v1.11.3
+    name: kube-scheduler
+```
+
+```bash
+NAME                            READY   STATUS    RESTARTS  AGE
+coredns-78fcdf6894-bk4ml        1/1     Running   0         1h
+coredns-78fcdf6894-ppr6m        1/1     Running   0         1h
+etcd-master                     1/1     Running   0         1h
+kube-apiserver-master           1/1     Running   0         1h
+kube-controller-manager-master  1/1     Running   0         1h
+kube-proxy-dgbgv                1/1     Running   0         1h
+kube-proxy-fptbr                1/1     Running   0         1h
+kube-scheduler-master           1/1     Running   0         1h
+my-custom-scheduler             1/1     Running   0         9s
+weave-net-4tfpt                 2/2     Running   1         1h
+weave-net-6j6zs                 2/2     Running   1         1h
+```
+
+Para usar el nuevo Scheduler, basta con indicarselo al Pod:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: annotation-default-scheduler
+  labels:
+    name: multischeduler-example
+spec:
+  # Define la propiedad schedulerName
+  schedulerName: my-custom-scheduler
+  containers:
+  - name: pod-with-default-annotation-container
+    image: k8s.gcr.io/pause:2.0
+```
+
+Mostramos los eventos del namespace donde corre el pod
+```bash
+kubectl get events -n default
+
+LAST SEEN   COUNT   NAME      KIND  TYPE      REASON      SOURCE                MESSAGE
+9s          1       nginx.15   Pod   Normal   Scheduled   my-custom-scheduler   Successfully assigned default/nginx to node01
+8s          1       nginx.15   Pod   Normal   Pulling     kubelet, node01       pulling image "nginx"
+2s          1       nginx.15   Pod   Normal   Pulled      kubelet, node01       Successfully pulled image "nginx"
+```
+
 
 
 ## 04 - Logging and Monitoring
