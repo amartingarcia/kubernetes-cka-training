@@ -1722,14 +1722,325 @@ kubectl logs –f event-simulator-pod -c event-simulator
 
 ## 05 - Application Lifecycle Management
 ### 05.1 - Rolling Updates and Rollbacks
-### 05.2 - Configurar aplicciones
-### 05.3 - Commands
-### 05.4 - Commands and Arguments
-### 05.5 - Configurar ENVs en aplicaciones
-### 05.6 - Configurar Secrets en aplicaciones
-### 05.7 - Escalar aplicaciones
-### 05.8 - Multi-container Pods Desing Pattern
-### 05.9 - Init Containers
+Cuando se crea un Deployment, se crea una versión (PE: v1) (replicaSet), en el futuro cuando el Deployment es actualizado, las versiones también son actualizadas. 
+Esto nos ayuda a realizar el seguimiento de nuestro Deploymente, y retroceder a una versión anterior si fuera necesario.
+
+```bash
+# Conocer el estado de un Deployment
+kubectl rollout status deployment/myapp-deployment
+
+Waiting for rollout to finish: 0 of 10 updated replicas are available...
+Waiting for rollout to finish: 1 of 10 updated replicas are available...
+Waiting for rollout to finish: 2 of 10 updated replicas are available...
+Waiting for rollout to finish: 3 of 10 updated replicas are available...
+Waiting for rollout to finish: 4 of 10 updated replicas are available...
+Waiting for rollout to finish: 5 of 10 updated replicas are available...
+Waiting for rollout to finish: 6 of 10 updated replicas are available...
+Waiting for rollout to finish: 7 of 10 updated replicas are available...
+Waiting for rollout to finish: 8 of 10 updated replicas are available...
+Waiting for rollout to finish: 9 of 10 updated replicas are available...
+deployment "myapp-deployment" successfully rolled out
+
+# Conocer el historial de estado de un Dployment
+kubectl rollout history deployment/myapp-deployment
+deployments "myapp-deployment"
+REVISION CHANGE-CAUSE
+1 <none>
+2 kubectl apply --filename=deployment-definition.yml --record=true
+```
+
+Existen dos tipos de estrategias de despliegues:
+* __Recreate__: destruir primero los Pods, e implementar la nueva versión. Utilizar este método causa que la aplicación no esté disponible.
+* __Rolling Update__: destruir y crear la nueva versión Pod a Pod, sin causar que la aplicación no esté disponible.
+
+```yaml
+# Recreate
+...
+spec:
+  replicas: 3
+  strategy:
+    type: Recreate
+...
+
+# RollingUpdate
+...
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2        # Cuantos Pods se añaden al mismo tiempo
+      maxUnavailable: 0  # Cuantos Pods puede no estar disponibles durante la actualización
+...
+```
+
+
+Cuando una actualización no funciona como esperabamos, podemos utilizar la estrategia de __Rollback__,
+
+```bash
+kubectl rollout undo deployment/myapp-deployment
+deployment "deployment/myapp-deployment" rolled back
+
+# Alternativamente puedes indicarle la revisión a la que quieres volver
+kubectl rollout undo deployment/myapp-deployment --to-revision=2
+deployment "deployment/myapp-deployment" rolled back
+```
+
+
+### 05.2 - Commands and Arguments
+
+Una imagen pueden contener parámetros que indiquen como se comportará el contendor cuando se lanza:
+```bash
+# Dockerfile ubuntu-sleeper
+FROM Ubuntu          # imagen
+ENTRYPOINT ["sleep"] # Comando que se lanza 
+CMD ["5"]            # argumento para el comando por defecto
+
+# Ejecución
+docker run ubuntu-sleeper 10
+```
+
+La misma imagen, usada en un Pod:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu-sleeper-pod
+spec:
+  containers:
+    - name: ubuntu-sleeper
+      image: ubuntu-sleeper   # imagen
+      command: ["sleep2.0"]   # Reemplazamos el ENTRYPOINT de la imagen
+      args: ["10"]            # Indicamos un argumento
+```
+
+### 05.3 - Configurar ENVs en aplicaciones
+
+Podemos proporcionar variables a un Pod de distintas formas.
+
+* Texto plano:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+spec:
+  containers:
+    - name: simple-webapp
+      image: simple-webapp
+      ports:
+        - containerPort: 8080
+      env:
+        - name: APP_COLOR
+          value: green
+```
+
+* Carga de variables a través de Configmap
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+spec:
+  containers:
+    - name: simple-webapp
+      image: simple-webapp
+      ports:
+        - containerPort: 8080
+      env:
+        - name: APP_COLOR
+          valueFrom:
+            configMapKeyRef:
+              name: configmap-color
+              key: color
+```
+
+* Carga de variables a través de Secrets
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+spec:
+  containers:
+    - name: simple-webapp
+      image: simple-webapp
+      ports:
+        - containerPort: 8080
+      env:
+        - name: APP_COLOR
+          valueFrom:
+            secretKeyRef:
+              name: secret-color
+              key: color
+```
+
+### 05.4 - Configurar ConfigMaps en aplicaciones
+Si tenemos muchos datos que pasar a un Pod, podemos configurar objetos __configMaps__ para almacenarlos.
+
+* Crear configMap:
+```bash
+# Sintaxis Imperativa
+kubectl create configmap <config-name> --from-literal=<key>=<value>
+
+# Ejemplos
+## Configmap con una clave
+kubectl create configmap \
+        app-config --from-literal=APP_COLOR=blue
+
+## Configmap con varias claves
+kubectl create configmap \
+        app-config --from-literal=APP_COLOR=blue \
+                   --from-literal=ENVIRONMENT=pro \
+                   --from-literal=email=test@test.test
+
+## Configmap a partir de un fichero
+kubectl create configmap \
+        app-config --from-file=app_config.properties
+```
+
+* Componer manifiesto configMap:
+```yaml
+# app-config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_COLOR: blue
+  APP_MODE: prod
+```
+
+Para referenciarlos basta con detallarlo en el Pod:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+spec:
+  containers:
+    - name: simple-webapp
+      image: simple-webapp
+      ports:
+        - containerPort: 8080
+      env:
+        - name: APP_COLOR
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+```
+
+Existen distintas formas de pasar un ConfigMap a un Pod:
+```yaml
+# Carga como variable de entorno
+envForm:
+  - configMapRef:
+      name: app-config
+
+# Carga como variable simple
+env:
+  - name: APP_COLOR
+    valueFrom:
+      configMapRefKey:
+        name: app-config
+        key: APP_COLOR
+
+# Carga de variables como un volumen
+volumes:
+- name: app-config-volume
+  configMap:
+    name: app-config
+```
+
+### 05.5 - Configurar Secrets en aplicaciones
+Los Secrets de Kubernetes, son objetos que codifican su contenido en base64, son útiles para almacenar datos sensibles, que posteriormente se utilizarán en los servicios que implementen.
+
+```bash
+# Sintaxis creación de secretos
+kubectl create secret generic \
+        <secret-name> --from-literal=<key>=<value>
+
+# Ejemplos
+## Crear secreto con una clave
+kubectl create secret generic \
+        app-secret --from-literal=DB_PASS=pass
+
+## Crear secreto con múltiples claves
+kubectl create secret generic \
+        app-secret --from-literal=DB_PASS=pass \
+        app-secret --from-literal=DB_HOST=host
+
+
+## Crear secreto a partir de un fichero
+kubectl create secret generic \
+        app-secret --from-file=db.properties
+```
+
+Cuando se crea el secreto a través de comando imperativo, el contenido se codifica en Base64.
+```bash
+kubectl describe secret app-secret
+
+...
+DB_PASS: ZXMgdW4gc2VjcmV0bwo=
+...
+```
+
+Crear un manifiesto de un secreto se vería así, debemos indicar el contenido codificado:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+data:
+  DB_PASS: ZXMgdW4gc2VjcmV0bwo=    # base64
+```
+
+Para pasar un secreto a un Pod, lo hacemos:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+spec:
+  containers:
+    - name: simple-webapp
+      image: simple-webapp
+      ports:
+        - containerPort: 8080
+      envFrom:
+        - secretRef:
+            name: app-secret
+```
+
+```yaml
+# Secreto como variables
+envFrom:
+  - secretRef:
+      name: app-secret
+
+# Secreto como única variable
+env:
+  - name: DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: app-secret
+        key: DB_Pass
+
+# Secreto como volumen (se crearán en el punto de montaje tantos ficheros como keys contenta el screto)
+volumes:
+- name: app-secret-volume
+  secret:
+    secretName: app-secret
+```
+
+Para codificar y decodificar un texto:
+```bash
+echo "pass" | base64 #Codificar
+echo "ZXMgdW4gc2VjcmV0bwo=" | base 64 -d
+```
+### 05.6 - Escalar aplicaciones
+### 05.7 - Multi-container Pods Desing Pattern
+### 05.8 - Init Containers
 
 
 
