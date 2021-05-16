@@ -1654,8 +1654,70 @@ LAST SEEN   COUNT   NAME      KIND  TYPE      REASON      SOURCE                
 
 ## 04 - Logging and Monitoring
 ### 04.1 - Monitorizar componentes del Cluster
-### 04.2 - Manejar logs de aplicación
+Kubernetes no facilita por defecto un sistema de monitorización, existen multitud de ellos
+* Metrics Server
+* Prometheus
+* Elastic Stack
+* DataDog
+* DynaTrace
 
+Heapster fue uno de los proyectos originales que habilitó las funciones de monitorización, cuando realice búsquedas, verá muchas referencias a este componente.
+Sin embargo, se encuentra deprecada. Se formó una versión reducida como __Metrics Server__.
+
+Metrics-server recupera las métricas de cada uno de los Nodos y Pods en memoria, no puede ver el histórico.
+
+Kubelete tiene un subcomponente conocido como __cAdvisor__ o __Container Advisor__, es el responsable de recuperar las métricas de rendimiento, y exponerlas a través de la API de kubelet.
+
+Puede instalar este servicio instalando los objetos que lo componen:
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+```
+
+Una vez creado metrics-server, podemos obtener métricas de los nodos y de los Pods:
+```bash
+# Nodes
+kubectl top node
+NAME          CPU(cores)  CPU%  MEMORY(bytes)   MEMORY%
+kubemaster    166m        8%    1337Mi          70%
+kubenode1     36m         1%    1046Mi          55%
+kubenode2     39m         1%    1048Mi          55%
+
+# Pods
+kubectl top pod
+NAME    CPU(cores)  CPU%  MEMORY(bytes)   MEMORY%
+nginx   166m        8%    1337Mi          70%
+redis   36m         1%    1046Mi          55%
+```
+
+
+### 04.2 - Manejar logs de aplicación
+Al igual que Docker, Kubernetes nos permite visualizar los logs de nuestras aplicaciones.
+
+```bash
+# -f logs en tiempo real
+# -c seleccionar un contenedor si nuestro Pod contiene más de uno.
+kubectl logs –f event-simulator-pod -c event-simulator
+
+2018-10-06 15:57:15,937 - root - INFO - USER1 logged in
+2018-10-06 15:57:16,943 - root - INFO - USER2 logged out
+2018-10-06 15:57:17,944 - root - INFO - USER2 is viewing page2
+2018-10-06 15:57:18,951 - root - INFO - USER3 is viewing page3
+2018-10-06 15:57:19,954 - root - INFO - USER4 is viewing page1
+2018-10-06 15:57:20,955 - root - INFO - USER2 logged out
+2018-10-06 15:57:21,956 - root - INFO - USER1 logged in
+2018-10-06 15:57:22,957 - root - INFO - USER3 is viewing page2
+2018-10-06 15:57:23,959 - root - INFO - USER1 logged out
+2018-10-06 15:57:24,959 - root - INFO - USER2 is viewing page2
+2018-10-06 15:57:25,961 - root - INFO - USER1 logged in
+2018-10-06 15:57:26,965 - root - INFO - USER4 is viewing page3
+2018-10-06 15:57:27,965 - root - INFO - USER4 is viewing page3
+2018-10-06 15:57:28,967 - root - INFO - USER2 is viewing page1
+2018-10-06 15:57:29,967 - root - INFO - USER3 logged out
+2018-10-06 15:57:30,972 - root - INFO - USER1 is viewing page2
+2018-10-06 15:57:31,972 - root - INFO - USER4 logged out
+2018-10-06 15:57:32,973 - root - INFO - USER1 logged in
+2018-10-06 15:57:33,974 - root - INFO - USER1 is viewing page3
+```
 
 
 ## 05 - Application Lifecycle Management
