@@ -2038,9 +2038,48 @@ Para codificar y decodificar un texto:
 echo "pass" | base64 #Codificar
 echo "ZXMgdW4gc2VjcmV0bwo=" | base 64 -d
 ```
+
+
 ### 05.6 - Escalar aplicaciones
-### 05.7 - Multi-container Pods Desing Pattern
-### 05.8 - Init Containers
+En ocasiones puede necesitar más de un contenedor en un Pod, por ejemplo, puede necesitar un contenedor para recoger los logs.
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multiple-container
+spec:
+  containers:
+    - name: simple-webapp
+      image: simple-webapp
+      ports:
+        - containerPort: 8080
+    - name: agent-log
+      image: agent-lob
+```
+
+### 05.7 - Init Containers
+
+En un Pod con múltiples contenedores, se espera que cada uno ejecute un proceso que permanezca vivo mientras dure el ciclo de vida del POD. 
+
+Los initContainer, es un contendor que se inicia cuando el Pod es provisionado, permite ejecutar tareas antes de que la aplicación principal esté disponible, un caso de uso puede ser un proceso que espera a que un servicio externo o una base de datos esté disponible antes de que se inicie la aplicación real. Es posible declarar múltiples initContainers y su ejecución es secuencial.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:
+  - name: init-myservice
+    image: busybox
+    command: ['sh', '-c', 'git clone <some-repository-that-will-be-used-by-application> ; done;']
+```
 
 
 
