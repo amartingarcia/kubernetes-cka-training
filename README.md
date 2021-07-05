@@ -1451,6 +1451,8 @@ spec:
       memory: 256Mi
     type: Container
 
+---
+
 # Default CPU
 apiVersion: v1
 kind: LimitRange
@@ -1480,6 +1482,8 @@ spec:
     min:
       memory: 128Mi
     type: Container
+
+---
 
 # Min Max CPU
 apiVersion: v1
@@ -1595,6 +1599,8 @@ spec:
       - --leader-elect=true
     image: k8s.gcr.io/kube-scheduler-amd64:v1.11.3
     name: kube-scheduler
+
+---
 
 # my-custom-scheduler.yaml
 apiVersion: v1
@@ -3783,15 +3789,13 @@ spec:
         app.kubernetes.io/name: ingress-nginx
     spec:
       containers:
-	  - name: nginx-ingress-controller
-	    image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.33.0
-    
+      - name: nginx-ingress-controller
+        image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.33.0
         args:
-		- /nginx-ingress-controller
-		- --configmap=$(POD_NAMESPACE)/nginx-configuration
-
-		env:
-          - name: POD_NAME
+        - /nginx-ingress-controller
+        - --configmap=$(POD_NAMESPACE)/nginx-configuration
+        env:
+        - name: POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
@@ -3799,7 +3803,6 @@ spec:
             valueFrom:
               fieldRef:
 				fieldPath: metadata.namespace
-		
 		ports:
         - containerPort: 80
           hostPort: 80
