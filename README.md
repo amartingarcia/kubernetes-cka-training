@@ -2085,11 +2085,157 @@ spec:
 
 ## 06 - Cluster Maintenance
 ### 06.1 - OS upgrades
-### 06.2 - Kubernetes Software Versions
-### 06.3 - Cluster Upgrade process
-### 06.4 - Backup and Restore methods
-### 06.5 - Working with ETCD
+Existe múltiples tareas de mantenimiento sobre los nodos de un cluster, pero estos nodos es posible que estén dando servicio.
+Kubectl, permite indicar a kubernetes el drenado de Pods de un nodo.
+```bash
+kubectl drain node01
+```
 
+Cuando drenamos un nodo, lo que estamos haciendo es acordonarlo (ningún Pod será programado en el nodo), y terminar los Pods que están programados en el. Kubernetes los recreará en otro nodo.
+
+Una vez terminemos las tareas de mantenimiento sobre el nodo, podrá volver a estar disponible para el programar Pods.
+```bash
+# Permite programar Pods en el nodo
+kubectl uncordon node01
+
+# Evita que se programen Pods en el nodo
+kubectl cordon node01
+```
+
+
+### 06.2 - Cluster Upgrade process
+Existe diferentes estrategias para la actualización de las versiones que corren en los nodos. Los primeros nodos a actualizar, sería los Master. Partiendo de que tenemos los Master, actualizados:
+* Todos a la vez, supone que ninguna de sus aplicaciones estarán disponibles durante el proceso de actualización.
+* Uno a uno, moviendo los Pods entre nodos para evitar que no estén disponibles las aplicaciones.
+* Agregar nuevos nodos actualizados, moviendo los Pods a estos, y eliminando los desactualizados.
+
+Con Kubeadm podemos actualizar los nodos con el siguente comando:
+```bash
+# Mostramos el plan de actualización
+$ kubeadm upgrade plan
+
+[preflight] Running pre-flight checks.
+[upgrade] Making sure the cluster is healthy:
+[upgrade/config] Making sure the configuration is correct:
+[upgrade] Fetching available versions to upgrade to
+[upgrade/versions] Cluster version: v1.11.8
+[upgrade/versions] kubeadm version: v1.11.3
+[upgrade/versions] Latest stable version: v1.13.4
+[upgrade/versions] Latest version in the v1.11 series: v1.11.8
+
+Components that must be upgraded manually after you have
+upgraded the control plane with 'kubeadm upgrade apply':
+
+COMPONENT     CURRENT         AVAILABLE
+Kubelet       3 x v1.11.3     v1.13.4
+
+Upgrade to the latest stable version:
+COMPONENT             CURRENT         AVAILABLE
+API Server            v1.11.8         v1.13.4
+Controller Manager    v1.11.8         v1.13.4
+Scheduler             v1.11.8         v1.13.4
+Kube Proxy            v1.11.8         v1.13.4
+CoreDNS               1.1.3           1.1.3
+Etcd                  3.2.18          N/A
+
+You can now apply the upgrade by executing the following command:
+kubeadm upgrade apply v1.13.4
+
+apt-get upgrade -y kubeadm=1.12.0-00
+
+kubeadm upgrade apply v1.12.0
+
+[upgrade/successful] SUCCESS! Your cluster was upgraded to "v1.12.0". Enjoy!
+[upgrade/kubelet] Now that your control plane is upgraded, please proceed with
+upgrading your kubelets if you havent already done so.
+
+# Mostramos la versión de nuestros nodos
+kubectl get nodes
+
+NAME      STATUS    ROLES   AGE     VERSION
+master    Ready     master  1d      v1.11.3
+node-1    Ready     <none>  1d      v1.11.3
+node-2    Ready     <none>  1d      v1.11.3
+
+$ apt-get upgrade -y kubelet=1.12.0-00
+
+$ systemctl restart kubelet
+
+$ kubectl get nodes
+NAME      STATUS  ROLES   AGE   VERSION
+master    Ready   master  1d    v1.12.0
+node-1    Ready   <none>  1d    v1.11.3
+node-2    Ready   <none>  1d    v1.11.3
+```
+
+### 06.3 - Backup and restore methods
+* Configuraciones
+Lo más seguro es almacenar todos nuestos manifiestos de Kubernetes en un sistema de control de versiones, de esta forma será mantenido más facilmente por un equipo.
+
+Si alguien ha creado algún recurso de forma imperativa, puede obtener un backup consultando al API Server.
+`kubectl get all --all-namespaces -o yaml > all-deploy-services.yaml`
+
+Algunos sitemas se encarga de realizar estas tareas [Velero](https://velero.io/)
+
+* ETCD
+ETCD cuenta con un comando para realizar snapshots de sus datos
+`ETCD_API=3 etcdctl snapshot save snapshot.db`
+
+Restaurar una copia de ETCD
+```bash
+# Para el servicio kube-apiserver
+$ service kube-apiserver stop
+Service kube-apiserver stopped
+
+# Restauramos la copia en una ruta
+ETCDCTL_API=3 etcdctl \
+              snapshot restore snapshot.db \
+              --data-dir /var/lib/etcd-from-backup \
+
+# Configuramos el servicio para que obtenga los datos de la nueva ruta
+etcd.service
+ExecStart=/usr/local/bin/etcd \\
+    --name ${ETCD_NAME} \\
+    --cert-file=/etc/etcd/kubernetes.pem \\
+    --key-file=/etc/etcd/kubernetes-key.pem \\
+    --peer-cert-file=/etc/etcd/kubernetes.pem \\
+    --peer-key-file=/etc/etcd/kubernetes-key.pem \\
+    --trusted-ca-file=/etc/etcd/ca.pem \\
+    --peer-trusted-ca-file=/etc/etcd/ca.pem \\
+    --peer-client-cert-auth \\
+    --client-cert-auth \\
+    --initial-advertise-peer-urls https://${INTERNAL_IP}:2380
+    --listen-peer-urls https://${INTERNAL_IP}:2380 \\
+    --listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379
+    --advertise-client-urls https://${INTERNAL_IP}:2379 \\
+    --initial-cluster-token etcd-cluster-0 \\
+    --initial-cluster controller-0=https://${CONTROLLER0_IP}:2380,controller
+    --initial-cluster-state new \\
+    --data-dir=/var/lib/etcd-from-backup
+
+# Reiniciamos el demonio
+$ systemctl daemon-reload
+$ systemctl etcd restart
+
+# Finalmente, inicie el servicio kube-apiserver
+$ service kube-apiserver start
+Service kube-apiserver started
+
+# Recuerde indicar todos los parámetros necesario para interactuar con ETCD
+ETCDCTL_API=3 etcdctl \
+    snapshot restore snapshot.db \
+    --data-dir /var/lib/etcd-from-backup \
+    --initial-cluster master-1=https://192.168.5.11:2380,master-2=https://192.168.5.12:2380 \
+    --initial-cluster-token etcd-cluster-1 \
+    --initial-advertise-peer-urls https://${INTERNAL_IP}:2380
+```
+
+### 06.4 - Working with ETCD
+`etcdctl` es un cliente de línea de comandos para etcd.
+
+Cuando realice acciones sobre ETCD v3, asegurse de indicar la versión: `export ETCDCTL_API=3`.
+
+Puede pasar el flag -h para conocer todas las opciones de un comando.
 
 
 ## 07 - Security
