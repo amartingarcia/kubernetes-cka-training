@@ -2413,10 +2413,10 @@ Puede ser muy confuso saber que ficheros son claves públicas o privadas.
 Un cluster se compone de nodos Master y nodos Worker, y la comunicación entre ellos debe ser segura y debe estar encriptada.
 
 Dos requisitos principales son tener todos los ervicios dentro del cluster para usar __Server Certificates for Servers__ y que todos los clientes usen __Client Certificates for Clients__.
-![dns_pod](../img/07_3_server_certificate.png)
-![dns_pod](../img/07_3_client_certificate.png)
-![dns_pod](../img/07_3_ca.png)
-![dns_pod](../img/07_3_all.png)
+![dns_pod](img/07_3_server_certificate.png)
+![dns_pod](img/07_3_client_certificate.png)
+![dns_pod](img/07_3_ca.png)
+![dns_pod](img/07_3_all.png)
 
 
 
