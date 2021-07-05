@@ -2413,67 +2413,142 @@ Puede ser muy confuso saber que ficheros son claves públicas o privadas.
 Un cluster se compone de nodos Master y nodos Worker, y la comunicación entre ellos debe ser segura y debe estar encriptada.
 
 Dos requisitos principales son tener todos los ervicios dentro del cluster para usar __Server Certificates for Servers__ y que todos los clientes usen __Client Certificates for Clients__.
-![dns_pod](img/07_3_server_certificate.png)
-![dns_pod](img/07_3_client_certificate.png)
-![dns_pod](img/07_3_ca.png)
-![dns_pod](img/07_3_all.png)
+![server_certificate](img/07_3_server_certificate.png)
+
+![client_certificate](img/07_3_client_certificate.png)
+
+![ca](img/07_3_ca.png)
+
+![all](img/07_3_all.png)
 
 
 
 ### 07.5 - TLS in Kubernetes - Certificate creation
-### 07.6 - View Certificate Details
-### 07.7 - Certificates API
-### 07.8 - Certificates
-1. Certificados para la CA
-* Generar ca.key (clave privada):
+Crearemos los certificados para el cluster.
+* Certificate Authority (CA):
 ```bash
+# Clave privada
 openssl genrsa -out ca.key 2048
-```
 
-* Generar solicitud de firma:
-```bash
+# Solicitud de firma con la clave privada
 openssl req -new ca.key -subj "/CN=KUBERNETES-CA" -out ca.csr
-```
 
-* Firmamos el certificado:
-```bash
+# Firmamos el certificado (autofirmado)
 openssl x509 -req -in ca.csr -signkey ca.key -out ca.crt
 ```
 
-2. Certificados para usuario
-* Generamos clave privada:
+* Admin User
 ```bash
+# Clave privada
 openssl genrsa -out admin.key 2048
-```
 
-* Generamos solicitud de firma:
-```bash
+# Solicitud de firma con la clave privada
 openssl req -new -key admin.key -subj "CN=kube-admin" -out admin.csr
-```
 
-* Firmamos con la CA de kubernetes:
-```bash
+# Firma de certificado con la clave privada de la CA
 openssl x509 -req -in admin.csr -CA ca.crt -CAkey ca.key -out admin.crt
 ```
 
-3. Comprobar acceso del usuario:
+* Certificados de clientes, ejecutamos lo mismo para los distintos componentes:
+  * SYSTEM:KUBE-SCHEDULER
+  * SYSTEM:KUBE-CONTROLLER-MANAGER
+  * SYSTEM:KUBE-PROXY
+
+
+* Server Certificates for Servers:
+  * ETCD:
+    * ETCD-SERVER
+    * ETCD-PEER (conexión entre las réplicas)
+  * API-SEVER
+  * KUBELET
+  
+### 07.6 - View Certificate Details
 ```bash
-curl https://kube-apiserver:6443/api/v1/pods \
-	--key admin.key \
-	--cert admin.crt \
-    --cacert ca.crt
+# Ver los detalles del certificado
+openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout
+
+Certificate:
+  Data:
+    Version: 3 (0x2)
+    Serial Number: 3147495682089747350 (0x2bae26a58f090396)
+  Signature Algorithm: sha256WithRSAEncryption
+    Issuer: CN=kubernetes                         # CA que emitió el certificado
+    Validity
+      Not Before: Feb 11 05:39:19 2019 GMT
+      Not After : Feb 11 05:39:20 2020 GMT        # Validez
+    Subject: CN=kube-apiserver                    # Nombre del certificado
+    Subject Public Key Info:
+      Public Key Algorithm: rsaEncryption
+      Public-Key: (2048 bit)
+      Modulus:
+        00:d9:69:38:80:68:3b:b7:2e:9e:25:00:e8:fd:01:
+      Exponent: 65537 (0x10001)
+    X509v3 extensions:
+      X509v3 Key Usage: critical
+        Digital Signature, Key Encipherment
+      X509v3 Extended Key Usage:
+        TLS Web Server Authentication
+      X509v3 Subject Alternative Name:
+        DNS:master, DNS:kubernetes, DNS:kubernetes.default,                           #
+        DNS:kubernetes.default.svc, DNS:kubernetes.default.svc.cluster.local, IP      ## Nombre alternativos
+        Address:10.96.0.1, IP Address:172.17.0.27                                     #
 ```
 
-* Datos de certificado:
+
+### 07.7 - Certificates API
+Necesitamos darle acceso al cluster a un nuevo compañero. 
+Crea su clave privada, y genera una solicitud de firma para la CA lo firme, nos lo envía porque somos los únicos administradores, lo firmamos y se lo devolvemos, y entonces puede acceder al cluster.
+
+Kubernetes tiene una API de Certificados que puede realizar estas tareas. Puede enviar un __CertificateSigningRequest__, a través de la API de kubernetes. Las peticiones pueden ser revisadas por los administradores y ser aprobadas con kubectl.
+
 ```bash
-openssl x509 -in ca.crt -text -noout
+# El usuario crea una clave
+openssl genrsa -out jane.key 2048
+
+# Solicitud de firma
+openssl req -new -key jane.key -subj "/CN=jane" -out jane.csr
+
+# cifra el contenido de la solicitud en base64
+cat jane.csr | base64
 ```
 
-* Crear un CertificateSigningRequest:
-	se visualiza en csr
-	se aprueba con certificate
+Crea el fichero para kubernetes
+```yaml
+apiVersion: certificates.k8s.io/v1beta1
+kind: CertificateSigningRequest
+metadata:
+  name: jane
+spec:
+  groups:
+  - system:authenticated
+  usages:
+  - digital signature
+  - key encipherment
+  - server auth
+  request:
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0
+    tLS0KTUlJQ1dEQ0NBVUFDQVFBd0V6RVJNQThHQTFVRU
+    F3d0libVYzTFhWelpYSXdnZ0VpTUEwR0NTcUdTSWIzR
+    FFFQgpBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRRE8wV0pX
+    K0RYc0FKU0lyanBObzV2UklCcGxuemcrNnhjOStVVnd
+    rS2kwCkxmQzI3dCsxZUVuT041TXVxOTlOZXZtTUVPbn
+```
 
-### 07.10 -  Kubeconfig
+Puedes visualizar y aprobar las solicitudes:
+```bash
+kubectl get csr
+
+NAME  AGE   REQUESTOR           CONDITION
+jane  10m   admin@example.com   Pending
+
+kubectl certificate approve jane
+
+jane approved!
+```
+
+El comando genera un certificado para el usuario, este puede ser extraido y compartido con el ususario.
+
+### 07.8 -  Kubeconfig
 We have seen that the k8s API Server can be accessed:
 ```bash
 curl https://my-kube:6443/api/v1/pods \
