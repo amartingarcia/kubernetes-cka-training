@@ -17,6 +17,7 @@
 - [14.Other Topics](#14---other-topics)
 
 ## 01 - Introducción
+---
 La finalidad de este repositorio es tener una guia para obtener la certificación de Kubernetes __CKA__.
 
 Se divide en directorios, que contienen ficheros README.md con la información necesaria para poder pasar el examen de certificación.
@@ -29,6 +30,7 @@ Introducción al curso:
 
 
 ### 01.1 - Detalles de la certificación
+---
 Algunas referencias al examen:
 * Administrador Certificado de Kubernetes: https://www.cncf.io/certification/cka/
 * Plan de estudios del examen (temas): https://github.com/cncf/curriculum
@@ -40,7 +42,9 @@ Use the code - show code in Udemy - while registering for the CKA or CKAD exams 
 
 
 ## 02 - Conceptos principales
+---
 ### 02.1 - Arquitectura del Cluster
+---
 El propósito de Kubernetes es alojar sus aplicaciones en forma de Pods de manera automatizada, para que pueda implementar tantas instancias como necesite, y facilitar la comunicación entre sus aplicaciones.
 
 Un cluster de kubernetes consta de un conjunto de nodos (fisicos o virtuales), que alojan aplicaciones en forma de Pods.
@@ -64,6 +68,7 @@ Componentes del Plano de Control:
 
 ![arch_1](img/1_k8s_arch.png)
 _Ejemplo de arquitectura con buques._
+
 
 ### 02.2 - ETCD
 #### 02.2.1 - Que es ETCD
