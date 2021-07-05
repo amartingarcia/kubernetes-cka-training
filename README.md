@@ -61,9 +61,9 @@ Componentes del Plano de Control:
 * __kube-apiserver__: solicita información sobre el estado de los Pods que se encuentran en los nodos, a través de Kubelet.
 * __kube-proxy__: es un servicio que corre en todos los nodos, y mantiene la comunicación entre nodos, para la comunicación entre Pods.
 
-Ejemplo de arquitectura con buques.
-![arch_1](img/1_k8s_arch.png)
 
+![arch_1](img/1_k8s_arch.png)
+_Ejemplo de arquitectura con buques._
 
 ### 02.2 - ETCD
 #### 02.2.1 - Que es ETCD
