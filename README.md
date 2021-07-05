@@ -3802,7 +3802,7 @@ spec:
           - name: POD_NAMESPACE
             valueFrom:
               fieldRef:
-				fieldPath: metadata.namespace
+                fieldPath: metadata.namespace
 		ports:
         - containerPort: 80
           hostPort: 80
