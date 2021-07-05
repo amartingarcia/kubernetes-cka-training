@@ -2240,14 +2240,190 @@ Puede pasar el flag -h para conocer todas las opciones de un comando.
 
 ## 07 - Security
 ### 07.1 - Kubernetes Security Primivite
+Algunos puntos a tener en cuenta con respecto a la seguridad en kubernetes, son los siguientes:
+
+#### 07.1.1 - Securización de Hosts
+Debe deshabilitar el acceso al usuario root, deshabilitar la password de usuarios y permitir solo la autenticación solo por clave ssh.
+
+#### 07.1.2 - Securización de Kubernetes
+Para comenzar, necesitamos tomar dos tipos de decisiones: quien puede acceder al cluster y que puede hacer.
+
+* Autenticación: los mecanismos de autenticación definen quien puede acceder al API Server. Existen diferentes formas de autenticarse contra el API Server.
+  * Usuario y password
+  * Usuario y token
+  * Certificados
+  * Provedores externos - LDAP
+  * Service Accounts
+
+* Autorización: los mecanismos de autorización definen que puede hacer una vez se han autenticado en el sistema:
+  * RBAC Authorization
+  * ABAC Authorization
+  * Node Authorization
+  * Webhook Mode
+
+Todas las comunicaciones entre los distintos componentes del clusters, se garantiza mediante el cifrado TLS.
+
+Las Pods del cluster, tienen conectividad entre si. Pero es posible restringir el acceso entre ellos utilizando __Network Policies__.
+
+
 ### 07.2 - Authentication
-### 07.3 - TLS Introduction
-### 07.4 - TLS Basic
-### 07.5 - TLS in Kubernetes
-### 07.6 - TLS in Kubernetes - Certificate creation
-### 07.7 - View Certificate Details
-### 07.8 - Certificates API
-### 07.9 - Certificates
+Kubernetes no administra usuario de forma nativa, se basa en fuentes externas como un archivo con detalles de usuarios, certificados o cuentas de identidad de terceros.
+
+Por lo tanto, no puede crear usuarios.
+
+#### 7.2.3 - Auth Basic
+Puede crear una lista de usuarios y sus contraseñas en formato CSV.
+
+```bash
+# User details
+## password,user,ID_user,group(optional)
+password123,user1,u0001
+password123,user2,u0002
+password123,user3,u0003
+password123,user4,u0004
+```
+
+Dentro el servicio kube-apiserver, puede indicar lo siguiente:
+
+```bash
+# kube-apiserver.service
+ExecStart=/usr/local/bin/kube-apiserver \\
+  --advertise-address=${INTERNAL_IP} \\
+  --allow-privileged=true \\
+  --apiserver-count=3 \\
+  --authorization-mode=Node,RBAC \\
+  --bind-address=0.0.0.0 \\
+  --enable-swagger-ui=true \\
+  --etcd-servers=https://127.0.0.1:2379 \\
+  --event-ttl=1h \\
+  --runtime-config=api/all \\
+  --service-cluster-ip-range=10.32.0.0/24 \\
+  --service-node-port-range=30000-32767 \\
+  --v=2 \\
+  --basic-auth-file=user-details.csv
+```
+
+```json
+curl -v -k https://master-node-ip:6443/api/v1/pods -u "user1:password123"
+
+{
+  "kind": "PodList",
+  "apiVersion": "v1",
+  "metadata": {
+    "selfLink": "/api/v1/pods",
+    "resourceVersion": "3594"
+  },
+  "items": [
+  {
+    "metadata": {
+      "name": "nginx-64f497f8fd-krkg6",
+      "generateName": "nginx-64f497f8fd-",
+      "namespace": "default",
+      "selfLink": "/api/v1/namespaces/default/pods/nginx-64f497f8fd-krkg6",
+      "uid": "77dd7dfb-2914-11e9-b468-0242ac11006b",
+      "resourceVersion": "3569",
+      "creationTimestamp": "2019-02-05T07:05:49Z",
+      "labels": {
+        "pod-template-hash": "2090539498",
+        "run": "nginx"
+...
+```
+
+De manera similar, podemos tener un fichero con tokens estáticos.
+
+```bash
+# User details
+## token,user,ID_user,group(optional)
+ad34gdfg66hn&7MK,user1,u0001
+ad34gdfg66hnffad,user2,u0002
+ad34gdfg66hasdfn,user3,u0003
+ad34gdfg66hn4rff,user4,u0004
+```
+
+La linea a indicar en el servicio kube-apiserver.service sería:
+```bash
+--token-auth-file=user-details.csv
+```
+
+Para realizar la petición al API server:
+```bash
+curl -v -k https://master-node-ip:6443/api/v1/pods --header "Authorization: Bearer ad34gdfg66hasdfn"
+```
+
+Estos dos tipos de autenticación no son seguras, por lo tanto no es recomendable usarlas.
+
+
+### 07.3 - TLS Basic
+Se utiliza un certificado para garantizar la confianza entre dos partes durante una transacción.
+
+#### 07.3.1 - HTTP
+Tenemos una web a la que accedemos con usuario y contraseña, pero esta, no utiliza __HTTPS__. Cuando enviamos nuestras credenciales a través de la red, van en texto plano, por lo que si alguien escucha el tráfico de la red, puede obtener el usuario y la contraseña.
+
+Los datos se cifran utilizando una clave, que basicamente es un conjunto de números y letras aleatorias. Si alguien que está escuchando el tráfico de red obtiene estos datos no sabrá descifrarlos, pero esto mismo le ocurre al servidor destino, por ello tenemos que enviar también una copia de la clave, y del mismo modo, si el atacante la obtiene, podrá descifrar nuestros datos.
+
+Esto se conoce como __encriptación simétrica__. Es una forma segura de cifrado, pero dado que se usa la misma clave para cifrar y descifrar datos y que la clave debe intercambiarse entre el remitente y el receptor, existe un riesgo.
+
+El __cifrado asimétrico__, utiliza un par de claves, __Private Key y Public Key__. Si algo es cifrado con la Public Key, solo podrá ser descifrado con la Private Key, por ello nunca debe compartirse.
+
+
+#### 07.3.2 SSH:
+Asegurar acceso ssh a un servidor
+Lo primero, será generar el par de claves:
+```bash
+ssh-keygen
+
+id_rsa      # private key 
+id_rsa.pub  # public key
+```
+
+Asegure su servidor para que el acceso solo pueda ser por clave.
+
+Añada su clave pública en el servidor, normalmente se añade al fichero __.ssh/authorized_keys__
+
+Si más usuarios necesitan acceder al servidor, podrán generar sus propias claves y añadirlas al fichero del servidor.
+
+#### 07.3.3 -  HTTPS
+Aqui utilizamos el comando openssl para generar un par de claves pública y privada.
+
+```bash
+# Genera clave privada
+openssl genrsa -out my-bank.key 1024
+
+# Genera clave pública
+openssl rsa -in my-bank.key -pubout > mybank.pem
+```
+
+Cuando el usuario accede por primera vez al servidor web, mediante https, obtiene la clave pública del servidor, como el pirata informático está escuchando la red, el también recibe una copia de la clave pública.
+
+El navegador del usuario encripta la clave simétrica, utilizando la clave pública proporcionada por el servidor. La clave simétrica ahora es segura, el usuario la envía al servidor.
+
+Sin embargo no tiene la clave privada del servidor para descifrar el mensaje.
+
+### 07.4 - TLS in Kubernetes
+Puede ser muy confuso saber que ficheros son claves públicas o privadas.
+
+| Certificate (Public Key)  | Private Key  |
+|---------------------------|--------------|
+| *.crt *.pem               | *.key *-key.pem  |
+| server.crt                | server.key  |
+| server.pem                | server-key.pem  |
+| client.crt                | client.key  |
+| client.pem                | cliente-key.pem  |
+
+Un cluster se compone de nodos Master y nodos Worker, y la comunicación entre ellos debe ser segura y debe estar encriptada.
+
+Dos requisitos principales son tener todos los ervicios dentro del cluster para usar __Server Certificates for Servers__ y que todos los clientes usen __Client Certificates for Clients__.
+![dns_pod](../img/07_3_server_certificate.png)
+![dns_pod](../img/07_3_client_certificate.png)
+![dns_pod](../img/07_3_ca.png)
+![dns_pod](../img/07_3_all.png)
+
+
+
+### 07.5 - TLS in Kubernetes - Certificate creation
+### 07.6 - View Certificate Details
+### 07.7 - Certificates API
+### 07.8 - Certificates
 1. Certificados para la CA
 * Generar ca.key (clave privada):
 ```bash
