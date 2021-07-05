@@ -3803,7 +3803,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-		ports:
+        ports:
         - containerPort: 80
           hostPort: 80
         - containerPort: 443
