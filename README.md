@@ -29,7 +29,6 @@ Introducción al curso:
 
 
 ### 01.1 - Detalles de la certificación
----
 Algunas referencias al examen:
 * Administrador Certificado de Kubernetes: https://www.cncf.io/certification/cka/
 * Plan de estudios del examen (temas): https://github.com/cncf/curriculum
@@ -42,7 +41,6 @@ Use the code - show code in Udemy - while registering for the CKA or CKAD exams 
 
 ## 02 - Conceptos principales
 ### 02.1 - Arquitectura del Cluster
----
 El propósito de Kubernetes es alojar sus aplicaciones en forma de Pods de manera automatizada, para que pueda implementar tantas instancias como necesite, y facilitar la comunicación entre sus aplicaciones.
 
 Un cluster de kubernetes consta de un conjunto de nodos (fisicos o virtuales), que alojan aplicaciones en forma de Pods.
@@ -69,9 +67,7 @@ _Ejemplo de arquitectura con buques._
 
 
 ### 02.2 - ETCD
----
 #### 02.2.1 - Que es ETCD
----
 ETCD es una base de datos clave-valor distribuida que es simple, segura y rápida.
 
 #### 02.2.1 - Como instalar ETCD
