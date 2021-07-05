@@ -27,6 +27,7 @@ Introducción al curso:
 * No es un examen convencional, sino ejercicios que ponen a prueba sus conocimientos.
 * Podrá consultar la documentación oficial de kubernetes en el examen
 
+
 ### 01.1 - Detalles de la certificación
 Algunas referencias al examen:
 * Administrador Certificado de Kubernetes: https://www.cncf.io/certification/cka/
