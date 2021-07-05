@@ -296,7 +296,7 @@ cat /etc/systemd/system/kube-apiserver.service
 --kubelet-client-certificate=/var/lib/kubernetes/kubernetes.pem \\
 ```
 
-* Como proceso
+* Como proceso:
 ```sh
 ps -aux | grep kube-apiserver
 
@@ -306,8 +306,8 @@ root 2348 3.3 15.4 399040 315604 ? Ssl 15:46 1:22 kube-apiserver --authorization
 ### 02.4 - Kube Controller Manager
 En terminos de kubernetes, un controlador es un proceso que monitoriza el estado de varios componentes dentro del sistema y trabaja para llevar todo el sistema al estado deseado.
 
-* Node Controller: verifica el estado de los nodos cada 5 segundos. Si deja de recibir datos de un nodo, espera 40 segundos antes de marcarlo como inalcanzable. Después de marcarlo como inalcanzable, espera 5 minutos para ver que reconecte, si no lo hace elimina los Pods asignados a ese nodo, y lo hace en otro sano.
-* Replication Controller: se encarga de monitororizar los ReplicaSets y garantiza que el número deseados.
+* __Node Controller:__ verifica el estado de los nodos cada 5 segundos. Si deja de recibir datos de un nodo, espera 40 segundos antes de marcarlo como inalcanzable. Después de marcarlo como inalcanzable, espera 5 minutos para ver que reconecte, si no lo hace elimina los Pods asignados a ese nodo, y lo hace en otro sano.
+* __Replication Controller__: se encarga de monitororizar los ReplicaSets y garantiza que el número deseados.
 
 Hay muchos otros Controllers, y están empaquetados en un solo proceso conocido como Controller Manager.
 
@@ -327,7 +327,7 @@ kube-system  kube-scheduler-master            1/1   Running  0        1h
 kube-system  weave-net-12ffc                  1/1   Running  0        1h
 ```
 
-* o como servicio:
+* Como servicio:
 ```sh
  
 cat /etc/kubernetes/manifests/kube-controller-manager.yaml
@@ -1318,6 +1318,8 @@ spec:
             - Large
             - Medium
 
+---
+
 # Pod con Affinity NotIn
 apiVersion: v1
 kind: Pod
@@ -1339,6 +1341,8 @@ spec:
             operator: NotIn
             values:
             - Small
+
+---
 
 # Solo comprobar que existe una key
 apiVersion: v1
