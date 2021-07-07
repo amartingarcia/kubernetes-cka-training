@@ -1,25 +1,23 @@
 # k8s-cka-certified
 ## Tabla de contenidos
 - [Tabla de contenidos](#tabla-de-contenidos)
-- [01.Introduccion](#01---introduccion)
-- [02.Core Concepts](#02---conceptos-principales)
-- [03.Scheduling](#03---scheduling)
-- [04.Logging & monitoring](#04---logging-monitoring)
-- [05.Application Lifecycle Management](#05---application-lifecycle-management)
-- [06.Cluster maintenance](#06---cluster-maintenance)
-- [07.Security](#07---security)
-- [08.Storage](#08---storage)
-- [09.Networking](#09---networking)
-- [10.Install kubernetes hard way](#10---install-kubernetes-hard-way)
-- [11.install kubernetes the kubeadm](#11---install-kubernetes-the-kubeadm)
-- [12.End to End test on a Kubernetes cluster](#12---end-to-end-test-on-a-kubernetes-cluster)
-- [13.Troubleshooting](#13---troubleshooting)
-- [14.Other Topics](#14---other-topics)
+- [01. Introduccion](#01---introduccion)
+- [02. Core Concepts](#02---conceptos-principales)
+- [03. Scheduling](#03---scheduling)
+- [04. Logging & monitoring](#04---logging-monitoring)
+- [05. Application Lifecycle Management](#05---application-lifecycle-management)
+- [06. Cluster maintenance](#06---cluster-maintenance)
+- [07. Security](#07---security)
+- [08. Storage](#08---storage)
+- [09. Networking](#09---networking)
+- [10. Install kubernetes hard way](#10---install-kubernetes-hard-way)
+- [11. Install kubernetes the kubeadm](#11---install-kubernetes-the-kubeadm)
+- [12. End to End test on a Kubernetes cluster](#12---end-to-end-test-on-a-kubernetes-cluster)
+- [13. Troubleshooting](#13---troubleshooting)
+- [14. Other Topics](#14---other-topics)
 
 ## 01 - Introducción
 La finalidad de este repositorio es tener una guia para obtener la certificación de Kubernetes __CKA__.
-
-Se divide en directorios, que contienen ficheros README.md con la información necesaria para poder pasar el examen de certificación.
 
 Introducción al curso:
 * El examen se puede comprar en la siguiente web: https://www.cncf.io/certification/cka/
@@ -97,7 +95,7 @@ Existe un cliente de linea de comando que permite interactuar con la BBDD:
 #### 02.2.2 - ETCD en Kubernetes
 ETCD almacena información sobre Nodos, Pods, Roles, Secrets, etc.
 
-Toda la información que proviene de kubectl (cliente de kubernetes en linea de comandos), proviene de ETCD.
+Toda la información que proviene de kubectl _(cliente de kubernetes en linea de comandos)_, proviene de ETCD.
 Cada cambio que realicemos en el cluster actualiza el ETCD, solo una vez que se actualice ETCD, el cambio se considerará completo.
 
 Puede configurar ETCD de distintas formas, en este caso configuraremos ETCD desde cero, y con kubeadm.
@@ -111,23 +109,23 @@ wget -q --https-only \ "https://github.com/coreos/etcd/releases/download/v3.3.9/
 etcd.service
 
 ExecStart=/usr/local/bin/etcd \\
---name ${ETCD_NAME} \\ 
---cert-file=/etc/etcd/kubernetes.pem \\ 
---key-file=/etc/etcd/kubernetes-key.pem \\ 
---peer-cert-file=/etc/etcd/kubernetes.pem \\ 
---peer-key-file=/etc/etcd/kubernetes-key.pem \\ 
---trusted-ca-file=/etc/etcd/ca.pem \\ 
---peer-trusted-ca-file=/etc/etcd/ca.pem \\ 
---peer-client-cert-auth \\
---client-cert-auth \\
---initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
---listen-peer-urls https://${INTERNAL_IP}:2380 \\
---listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
---advertise-client-urls https://${INTERNAL_IP}:2379 \\
---initial-cluster-token etcd-cluster-0 \\
---initial-cluster-controller-0=https://${CONTROLLER0_IP}:2380,controller-1=https://${CONTROLLER1_IP}:2380 \\ # ETCD Nodes IPs
---initial-cluster-state new \\
---data-dir=/var/lib/etcd
+  --name ${ETCD_NAME} \\ 
+  --cert-file=/etc/etcd/kubernetes.pem \\ 
+  --key-file=/etc/etcd/kubernetes-key.pem \\ 
+  --peer-cert-file=/etc/etcd/kubernetes.pem \\ 
+  --peer-key-file=/etc/etcd/kubernetes-key.pem \\ 
+  --trusted-ca-file=/etc/etcd/ca.pem \\ 
+  --peer-trusted-ca-file=/etc/etcd/ca.pem \\ 
+  --peer-client-cert-auth \\
+  --client-cert-auth \\
+  --initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
+  --listen-peer-urls https://${INTERNAL_IP}:2380 \\
+  --listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
+  --advertise-client-urls https://${INTERNAL_IP}:2379 \\
+  --initial-cluster-token etcd-cluster-0 \\
+  --initial-cluster-controller-0=https://${CONTROLLER0_IP}:2380,controller-1=https://${CONTROLLER1_IP}:2380 \\ # ETCD Nodes IPs
+  --initial-cluster-state new \\
+  --data-dir=/var/lib/etcd
 ```
 
 * Configuración con kubeadm:
@@ -159,23 +157,23 @@ En ese caso, tendrá que configurar la declaración y conexión entre los nodos 
 etcd.service
 
 ExecStart=/usr/local/bin/etcd \\
---name ${ETCD_NAME} \\ 
---cert-file=/etc/etcd/kubernetes.pem \\ 
---key-file=/etc/etcd/kubernetes-key.pem \\ 
---peer-cert-file=/etc/etcd/kubernetes.pem \\ 
---peer-key-file=/etc/etcd/kubernetes-key.pem \\ 
---trusted-ca-file=/etc/etcd/ca.pem \\ 
---peer-trusted-ca-file=/etc/etcd/ca.pem \\ 
---peer-client-cert-auth \\
---client-cert-auth \\
---initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
---listen-peer-urls https://${INTERNAL_IP}:2380 \\
---listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
---advertise-client-urls https://${INTERNAL_IP}:2379 \\
---initial-cluster-token etcd-cluster-0 \\
---initial-cluster controller-0=https://${CONTROLLER0_IP}:2380,controller-1=https://${CONTROLLER1_IP}:2380 \\ 
---initial-cluster-state new \\
---data-dir=/var/lib/etcd
+  --name ${ETCD_NAME} \\ 
+  --cert-file=/etc/etcd/kubernetes.pem \\ 
+  --key-file=/etc/etcd/kubernetes-key.pem \\ 
+  --peer-cert-file=/etc/etcd/kubernetes.pem \\ 
+  --peer-key-file=/etc/etcd/kubernetes-key.pem \\ 
+  --trusted-ca-file=/etc/etcd/ca.pem \\ 
+  --peer-trusted-ca-file=/etc/etcd/ca.pem \\ 
+  --peer-client-cert-auth \\
+  --client-cert-auth \\
+  --initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
+  --listen-peer-urls https://${INTERNAL_IP}:2380 \\
+  --listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
+  --advertise-client-urls https://${INTERNAL_IP}:2379 \\
+  --initial-cluster-token etcd-cluster-0 \\
+  --initial-cluster controller-0=https://${CONTROLLER0_IP}:2380,controller-1=https://${CONTROLLER1_IP}:2380 \\ 
+  --initial-cluster-state new \\
+  --data-dir=/var/lib/etcd
 ```
 
 #### 02.2.3 - ETCD commands
@@ -205,9 +203,11 @@ export ETCDCTL_API=3
 
 Debes especificar la ruta a los archivos de certificado para que ETCDCTL pueda autenticarse en el servidor de la API de ETCD. Los archivos de certificados están disponibles en el etcd-master en la siguiente ruta.
 
-* --cacert /etc/kubernetes/pki/etcd/ca.crt     
-* --cert /etc/kubernetes/pki/etcd/server.crt     
-* --key /etc/kubernetes/pki/etcd/server.key
+```bash
+--cacert /etc/kubernetes/pki/etcd/ca.crt     
+--cert /etc/kubernetes/pki/etcd/server.crt     
+--key /etc/kubernetes/pki/etcd/server.key
+```
 
 Comando final:
 ```sh
@@ -216,7 +216,7 @@ kubectl exec etcd-master -n kube-system -- sh -c "ETCDCTL_API=3
 
 
 ### 02.3 - Kube API Server
-API Server, es el componente de adminstración principal del cluster de kubernetes.
+__API Server__, es el componente de adminstración principal del cluster de kubernetes.
 
 Cuando ejecuta comandos con kubectl, la solicitud llega al APIServer, este primero autentica la solicitud y la valida, obtiene los datos del ETCD y responde con la información solicitada.
 
@@ -232,7 +232,7 @@ Flujo de creación de objetos (para realizar los cambios se sigue un flujo simil
 9. Kubelet actualiza el estado del Pod al APIServer.
 10. APIServer actualiza el estado del Pod a ETCD.
 
-APIServer es el responsable de autenticar, validar solicitudes, recuperar y actualizar datos en el cluster de ETCD (es el único componente que se comunica con el).
+APIServer es el responsable de autenticar, validar solicitudes, recuperar y actualizar datos en el cluster de ETCD _(es el único componente que se comunica con el)_.
 
 La arquitectura de Kubernetes consiste en una gran cantidad de componentes diferentes que trabajan entre si.
 
@@ -241,6 +241,7 @@ Depende como configure su cluster, podrá ver las opciones de kube-APIServer.
 ```sh
 cat /etc/kubernetes/manifests/kube-apiserver.yaml
 
+...
 spec:
   containers:
 - command:
@@ -267,6 +268,7 @@ spec:
   - --requestheader-extra-headers-prefix=X-Remote-Extra-
   - --requestheader-group-headers=X-Remote-Group
   - --requestheader-username-headers=X-Remote-User
+...
 ```
 
 * Como servicio:
@@ -274,47 +276,54 @@ spec:
 cat /etc/systemd/system/kube-apiserver.service
 
 [Service] ExecStart=/usr/local/bin/kube-apiserver \\
---advertise-address=${INTERNAL_IP} \\ 
---allow-privileged=true \\ 
---apiserver-count=3 \\
---audit-log-maxage=30 \\ 
---audit-log-maxbackup=3 \\ 
---audit-log-maxsize=100 \\ 
---audit-log-path=/var/log/audit.log \\ 
---authorization-mode=Node,RBAC \\ 
---bind-address=0.0.0.0 \\ 
---client-ca-file=/var/lib/kubernetes/ca.pem \\ 
---enable-admission-plugins=Initializers,NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,Defa ultStorageClass,ResourceQuota \\
---enable-swagger-ui=true \\ 
---etcd-cafile=/var/lib/kubernetes/ca.pem \\ 
---etcd-certfile=/var/lib/kubernetes/kubernetes.pem \\ 
---etcd-keyfile=/var/lib/kubernetes/kubernetes-key.pem \\ 
---etcd-servers=https://10.240.0.10:2379,https://10.240.0.11:2379,https://10.240.0.12:2379 \\ 
---event-ttl=1h \\ 
---experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
---kubelet-certificate-authority=/var/lib/kubernetes/ca.pem \\ 
---kubelet-client-certificate=/var/lib/kubernetes/kubernetes.pem \\
+  --advertise-address=${INTERNAL_IP} \\ 
+  --allow-privileged=true \\ 
+  --apiserver-count=3 \\
+  --audit-log-maxage=30 \\ 
+  --audit-log-maxbackup=3 \\ 
+  --audit-log-maxsize=100 \\ 
+  --audit-log-path=/var/log/audit.log \\ 
+  --authorization-mode=Node,RBAC \\ 
+  --bind-address=0.0.0.0 \\ 
+  --client-ca-file=/var/lib/kubernetes/ca.pem \\ 
+  --enable-admission-plugins=Initializers,NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,Defa ultStorageClass,ResourceQuota \\
+  --enable-swagger-ui=true \\ 
+  --etcd-cafile=/var/lib/kubernetes/ca.pem \\ 
+  --etcd-certfile=/var/lib/kubernetes/kubernetes.pem \\ 
+  --etcd-keyfile=/var/lib/kubernetes/kubernetes-key.pem \\ 
+  --etcd-servers=https://10.240.0.10:2379,https://10.240.0.11:2379,https://10.240.0.12:2379 \\ 
+  --event-ttl=1h \\ 
+  --experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
+  --kubelet-certificate-authority=/var/lib/kubernetes/ca.pem \\ 
+  --kubelet-client-certificate=/var/lib/kubernetes/kubernetes.pem \\
 ```
 
 * Como proceso:
 ```sh
 ps -aux | grep kube-apiserver
 
-root 2348 3.3 15.4 399040 315604 ? Ssl 15:46 1:22 kube-apiserver --authorization-mode=Node,RBAC -- advertise-address=172.17.0.32 --allow-privileged=true --client-ca-file=/etc/kubernetes/pki/ca.crt --disable- admission-plugins=PersistentVolumeLabel --enable-admission-plugins=NodeRestriction--enable-bootstrap-token- auth=true --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt --etcd-certfile=/etc/kubernetes/pki/apiserver-etcd- client.crt --etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key --etcd-servers=https://127.0.0.1:2379 -- insecure-port=0 --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt --kubelet-client- key=/etc/kubernetes/pki/apiserver-kubelet-client.key --kubelet-preferred-address- types=InternalIP,ExternalIP,Hostname --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt --proxy- client-key-file=/etc/kubernetes/pki/front-proxy-client.key--requestheader-allowed-names=front-proxy-client -- requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt --requestheader-extra-headers-prefix=X-Remote- Extra- --requestheader-group-headers=X-Remote-Group --requestheader-username-headers=X-Remote-User --secure- port=6443 --service-account-key-file=/etc/kubernetes/pki/sa.pub --service-cluster-ip-range=10.96.0.0/12 --tls- cert-file=/etc/kubernetes/pki/apiserver.crt --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
+root 2348 3.3 15.4 399040 315604 ? Ssl 15:46 1:22 kube-apiserver --authorization-mode=Node,RBAC -- advertise-address=172.17.0.32 --allow-privileged=true --client-ca-file=/etc/kubernetes/pki/ca.crt 
+--disable- admission-plugins=PersistentVolumeLabel --enable-admission-plugins=NodeRestriction--enable-bootstrap-token- auth=true --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt 
+--etcd-certfile=/etc/kubernetes/pki/apiserver-etcd- client.crt --etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key --etcd-servers=https://127.0.0.1:2379 -- insecure-port=0 
+--kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt --kubelet-client- key=/etc/kubernetes/pki/apiserver-kubelet-client.key 
+--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt --proxy- client-key-file=/etc/kubernetes/pki/front-proxy-client.key--requestheader-allowed-names=front-proxy-client --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt 
+--requestheader-extra-headers-prefix=X-Remote-Extra- --requestheader-group-headers=X-Remote-Group 
+--requestheader-username-headers=X-Remote-User --secure- port=6443 --service-account-key-file=/etc/kubernetes/pki/sa.pub --service-cluster-ip-range=10.96.0.0/12 
+--tls-cert-file=/etc/kubernetes/pki/apiserver.crt --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
 ```
 
 ### 02.4 - Kube Controller Manager
 En terminos de kubernetes, un controlador es un proceso que monitoriza el estado de varios componentes dentro del sistema y trabaja para llevar todo el sistema al estado deseado.
 
 * __Node Controller:__ verifica el estado de los nodos cada 5 segundos. Si deja de recibir datos de un nodo, espera 40 segundos antes de marcarlo como inalcanzable. Después de marcarlo como inalcanzable, espera 5 minutos para ver que reconecte, si no lo hace elimina los Pods asignados a ese nodo, y lo hace en otro sano.
-* __Replication Controller__: se encarga de monitororizar los ReplicaSets y garantiza que el número deseados.
+* __Replication Controller__: se encarga de monitorizar los ReplicaSets y garantiza el número deseados.
 
-Hay muchos otros Controllers, y están empaquetados en un solo proceso conocido como Controller Manager.
+Hay muchos otros Controllers, y están empaquetados en un solo proceso conocido como __Controller Manager__.
 
 * Puede encontrarlo como Pod:
 ```sh
- 
 kubectl get pods -n kube-system
+
 NAMESPACE    NAME                             READY STATUS   RESTARTS AGE
 kube-system  coredns-78fcdf6894-hwrq9         1/1   Running  0        1h
 kube-system  coredns-78fcdf6894-rzhjr         1/1   Running  0        1h
@@ -329,8 +338,9 @@ kube-system  weave-net-12ffc                  1/1   Running  0        1h
 
 * Como servicio:
 ```sh
- 
 cat /etc/kubernetes/manifests/kube-controller-manager.yaml
+
+...
 spec:
   containers:
   - command:
@@ -344,15 +354,17 @@ spec:
     - --root-ca-file=/etc/kubernetes/pki/ca.crt
     - --service-account-private-key-file=/etc/kubernetes/pki/sa.key 
     - --use-service-account-credentials=true
+...
 ```
 
 ### 02.5 - Kube Scheduler
 El Scheduler, es el proceso que indica donde irá cada Pod, no los coloca el mismo, en este caso lo hace Kubelet.
 
 El Scheduler pasa por dos fases para identificar el mejor nodo:
-1. Filtra los nodos que no se ajustan al perfil del Pod. (Por ejemplo, elimina los nodos que no tienen suficientes recursos)
-2. Con los nodos restantes, utiliza una función de prioridad puntuando a los nodos de 0 a 10. Calculando el espacio que quedará disponible en un nodo si el pod se desplegase en el (Más espacio disponible - mejor puntuación).
-> hay más cosas que tener en cuenta como, Limits, Taints y Tolerations, NodeSelectors o Affinity.
+1. Filtra los nodos que no se ajustan al perfil del Pod. (Por ejemplo, descarta los nodos que no tienen suficientes recursos)
+2. Con los nodos restantes, utiliza una función de prioridad puntuando a los nodos de 0 a 10. Calculando el espacio que quedará disponible en un nodo si el pod se desplegase en el _(a más espacio disponible - mejor puntuación)_.
+
+> Hay más factores a que tener en cuenta como, Limits, Taints y Tolerations, NodeSelectors o Affinity.
 
 * Instalando Scheduler como servicio:
 ```sh
@@ -367,12 +379,14 @@ ExecStart=/usr/local/bin/kube-scheduler \\
 ```bash
 cat /etc/kubernetes/manifests/kube-scheduler.yaml
 
+...
 spec:
   containers:
   - command:
     - kube-scheduler
     - --address=127.0.0.1
     - --kubeconfig=/etc/kubernetes/scheduler.conf - --leader-elect=true
+...
 ```
 
 
