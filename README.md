@@ -391,11 +391,10 @@ spec:
 
 
 ### 02.6 - Kubelet
-Kubelet es el agente de Kubernetes en cada nodo. 
-Se encarga de:
-* Registar el nodo en cluster
-* Cuando recibe la orden de crear un contenedor, se lo indica al Container Runtime (Docker, ContainerD, RLT, etc), para que baje la imagen y lo instancie en el nodo.
-* Monitoriza los Pods, y le envía informes al API Server.
+Kubelet es el agente de Kubernetes desplegado en cada nodo y se encarga de:
+* Registar el nodo en cluster.
+* Cuando recibe la orden de crear un contenedor, se lo indica al Container Runtime (Docker, ContainerD, RLT, etc), para que descargue la imagen y lo instancie en el nodo.
+* Monitoriza los Pods, y envía informes al API Server.
 
 Kubelet no se instala automáticamente, el agente se instala en cada nodo como servicio.
 ```sh
@@ -421,10 +420,12 @@ root 2095 1.8 2.4 960676 98788 ? Ssl 02:32 0:36 /usr/bin/kubelet --bootstrap- ku
 
 
 ### 02.7 - Kube-proxy
-Dentro de un cluster de Kubernetes, cada Pod puede llegar a cualquier otro Pod.
+Dentro de un cluster de Kubernetes, cada Pod puede tener comunicación con cualquier otro Pod.
 
 Esto se logra mediante la implementación de una red entre los Pods. 
-Una red virtual que se extiende por todo el cluster, a la que se conectan todos los Pods, cuando se crea un Service, kube-proxy lo escanea y crea las reglas necesarias, una forma de hacerlo es con Iptables. Kube-proxy se implementa como DaemonSet (Pod por nodo).
+Una red virtual se extiende por todo el cluster, a la que se conectan todos los Pods, cuando se crea un Service, kube-proxy lo escanea y crea las reglas necesarias, una forma de hacerlo es con Iptables. 
+
+> Kube-proxy se implementa como DaemonSet (Pod por nodo).
 
 ### 02.8 - Pods
 Un Pod un conjunto de propiedades definidas en un fichero YAML, este fichero contiene la definición del objeto y agrupa uno o varios contenedores.
@@ -432,15 +433,21 @@ Un Pod un conjunto de propiedades definidas en un fichero YAML, este fichero con
 Un Pod, es la unidad más pequeña en Kubernetes.
 
 ```yaml
-apiVersion: v1              #Versión de la API de Kubernetes que estás usando para crear el objeto (String). Es una propiedad obligatoria. Ej: apps/v1, v1, ...
-kind: Pod                   #Tipo de objeto que tratamos de crear (String). Es una propiedad obligatoria. Ej: ReplicaSet, Deployment, Service, ...
-metadata:                   #Permite indicar datos sobre el objecto (diccionario), como el nombre, namespace, labels, etc. Es una propiedad obligatoria.
+#Versión de la API de Kubernetes que estás usando para crear el objeto (String). Es una propiedad obligatoria. Ej: apps/v1, v1, ...
+apiVersion: v1
+#Tipo de objeto que tratamos de crear (String). Es una propiedad obligatoria. Ej: ReplicaSet, Deployment, Service, ...
+kind: Pod
+#Permite indicar datos sobre el objecto (diccionario), como el nombre, namespace, labels, etc. Es una propiedad obligatoria.
+metadata:
   name: myapp-pod
-  labels:                   #Permite identificar un objeto y relacionarlo con otros, por ejemplo un Service, podría apuntar a este pod a través de sus Labels.
+  #Permite identificar un objeto y relacionarlo con otros, por ejemplo un Service, podría apuntar a este pod a través de sus Labels.
+  labels:
     app: myapp
     type: front-end
-spec:                       #Bajo esta propiedad se indican configuracaciones específicas para este Pod. Es una propiedad obligatoria
-  containers:               #Propiedad que define los contenedores que se declaran en este Pod (List), dado que puede haber uno o más.
+#Bajo esta propiedad se indican configuracaciones específicas para este Pod. Es una propiedad obligatoria
+spec:
+  #Propiedad que define los contenedores que se declaran en este Pod (List), dado que puede haber uno o más.
+  containers:
     - name: nginx-container
       image: nginx
 ```
